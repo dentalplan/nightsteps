@@ -6,16 +6,21 @@ use Math::Polygon::Calc;
 use GIS::Distance;
 use Time::Piece;
 
+#set up modules
 my $gis = GIS::Distance->new();
 my $db = ns_dbinterface->new;
-$db->connectDB;
 my $t = Time::Piece->new();
+
+#set up variables
 my $year = $t->year;
 my $DLen = 0;
 my $path = "/home/pi/nightstep/";
 my $pycomp = "ns_compass.py";
 my $gpslog = "gpsout.txt";
+my @listenshape = ([-6,-6], [-15,40], [15,40], [6,-6], [-6,-6]);
 
+
+$db->connectDB;
 for (my $y=1996; ; $y++){
 #for (; ;){
 	if ($y > $year){ $y=1996; }
@@ -43,7 +48,7 @@ for (my $y=1996; ; $y++){
 	if ($f == 1){
 		my $l = \%loc;
 		my $DLen = &getDegreeToMetre($l);
-		my $poly = Math::Polygon->new([-6,-6], [-15,40], [15,40], [6,-6], [-6,-6]);
+		my $poly = Math::Polygon->new(@listenshape);
 		my $spun = $poly->rotate(centre=>[0,0], degrees=>$l->{course});
 		my $polyco = &convertPolyCoord($spun, $l, $DLen);
 		my $a_places = &prepPlaces($l, $y, $DLen);
