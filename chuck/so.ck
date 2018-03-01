@@ -30,8 +30,8 @@ if(me.args()){
     <<< "No args!" >>>;
 }
 
-Noise n => dac;
-0.001 => n.gain;
+//Noise n => dac;
+//0.001 => n.gain;
 0::ms => dur past;
 
 // time-loop
