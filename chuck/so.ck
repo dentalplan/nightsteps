@@ -31,7 +31,7 @@ if(me.args()){
 }
 
 Noise n => dac;
-0.005 => n.gain;
+0.001 => n.gain;
 0::ms => dur past;
 
 // time-loop
