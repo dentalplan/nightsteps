@@ -45,16 +45,16 @@ while( past < len )
             g[i] * lr[i] => o2[i].gain;
             0 => o2[i].gain;
             o1[i] => dac.left;
-//            o2[i] => dac.right;
-            <<< t[i] >>>;
-            <<< rl >>>;
-            <<< lr[i] >>>;
-        }else{
+            o2[i] => dac.right;
+        }else if(t[i] > past){
+             
+        }
+        else{
             0 => o1[i].gain;
             0 => o2[i].gain;
         }
     }
     // advance time by 1 samp
-    10::samp => now;
-    10::samp +=> past;
+    1::ms => now;
+    1::ms +=> past;
 }
