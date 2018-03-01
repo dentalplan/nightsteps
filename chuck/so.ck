@@ -55,6 +55,6 @@ while( past < len )
         }
     }
     // advance time by 1 samp
-    1::ms => now;
-    1::ms +=> past;
+    10::ms => now;
+    10::ms +=> past;
 }
