@@ -32,7 +32,7 @@ for (my $y=1996; ; $y++){
 		if ($rah_places){
             print "We have places!\n";
             foreach my $rh_pl ($rah_places){
-			    if ($telem->checkPointsIsInShape($rh_pl, $polyco) == 1){
+			    if ($telem->checkPointIsInShape($rh_pl, $polyco) == 1){
                     print "ID " . $rh_pl->{"tblCoord.ID"} .": Property in shape\n";
                     my $address = $rh_pl->{"SAON"} . " " . $rh_pl->{"PAON"}  . " " . $rh_pl->{"Street"};
                     my $price = $rh_pl->{"Price"};
