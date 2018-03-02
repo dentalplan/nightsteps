@@ -13,7 +13,7 @@ package ns_telemetry{
             _gpslog => 'gpsout.txt',
             _gpspath => '/home/pi/nsdata/',
             _pycomp => 'ns_compass.py',
-            _pypath => '/hone/pi/nightsteps/',
+            _pypath => '/home/pi/nightsteps/',
         };
         bless $this, $class;
         return $this;
