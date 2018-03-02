@@ -1,6 +1,10 @@
 // FM synthesis by hand
 
-2000::ms => dur len;
+50 => float gmult;
+4 => float gbase;
+
+2000 => int lenms;
+lenms::ms => dur len;
 
 0 => int objects;
 
@@ -17,10 +21,12 @@ if(me.args()){
     for(0 => int i; i < objects; i++){
         (i * 5) => int p;
         Std.atof(me.arg(p+1)) => lr[i];
-        Std.atoi(me.arg(p+2))::ms => t[i];
-        Std.atof(me.arg(p+3)) => g[i];
+        Std.atof(me.arg(p+2)) => float timefract;
+        (Std.atof(me.arg(p+3)) * gmult) + gbase => g[i];
         Std.atof(me.arg(p+4)) => float freq;
         Std.atoi(me.arg(p+5))::ms => s[i];
+        Std.ftoi(timefract * lenms) => int timepoint;
+        timepoint::ms => t[i];
         SinOsc lo;
         freq => lo.freq;
         lo => o1[i];
