@@ -30,7 +30,7 @@ for (my $y=1996; ; $y++){
 		my $polyco = $telem->convertPolyCoord($spun, $rh_loc, $DLen);
 		my $rah_places = &prepPlaces($rh_loc, $y, $DLen);
 		if ($rah_places){
-            print "We have places!\n"
+            print "We have places!\n";
             foreach my $rh_pl ($rah_places){
 			    if ($telem->checkPointsIsInShape($rh_pl, $polyco) == 1){
                     print "ID " . $rh_pl->{"tblCoord.ID"} .": Property in shape\n";
