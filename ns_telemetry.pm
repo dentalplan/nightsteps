@@ -39,7 +39,7 @@ package ns_telemetry{
     sub convertPolyCoord{
         my ($this, $poly, $l, $DLen) = @_; 
     #    print "\nchecking incoming from spun\n";
-        &printPolyPoints($poly);
+        $this->printPolyPoints($poly);
         my @points = $poly->points;
         my @coord = (); 
         foreach my $p(@points){
