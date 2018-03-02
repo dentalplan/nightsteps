@@ -78,7 +78,7 @@ package ns_telemetry{
     #   print $gps[-1];
         for (my $i=-1; $i>=($size * -1) && $f == 0; $i-- ){
             chomp $gps[$i];
-            print $gps[$i];
+#            print $gps[$i];
             if($gps[$i] =~ m/.+ TPV, Time: .+, Lat: (.+), Lon: (.+), Speed: .+, Heading: .*/){
                 $loc{lat} = $1;
                 $loc{lon} = $2;

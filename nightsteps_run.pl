@@ -23,6 +23,7 @@ for (my $y=1996; ; $y++){
 	if ($y > $year){ $y=1996; }
     my $rh_loc = $telem->readGPS;
 	if ($rh_loc->{success} == 1){
+        print "GPS success!\n";
 		my $DLen = $telem->getDegreeToMetre($rh_loc);
 		my $poly = Math::Polygon->new(@listenshape);
 		my $spun = $poly->rotate(centre=>[0,0], degrees=>$rh_loc->{course});
