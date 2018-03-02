@@ -73,10 +73,10 @@ package ns_telemetry{
         open GPSLOG, "<$this->{_gpspath}$this->{_gpslog}" or die $!;
         my @gps = <GPSLOG>;
         my $size = @gps;
-        my $f = 0;
         my %loc = ();
+        $loc{success} = 0;
     #   print $gps[-1];
-        for (my $i=-1; $i>=($size * -1) && $f == 0; $i-- ){
+        for (my $i=-1; $i>=($size * -1) && $loc{success} == 0; $i-- ){
             chomp $gps[$i];
 #            print $gps[$i];
             if($gps[$i] =~ m/.+ TPV, Time: .+, Lat: (.+), Lon: (.+), Speed: .+, Heading: .*/){
@@ -90,6 +90,7 @@ package ns_telemetry{
             }
         }
         close GPSLOG;
+        print "loc success is $loc{success}\n";
         return \%loc;
     }
 
