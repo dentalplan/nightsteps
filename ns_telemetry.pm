@@ -83,7 +83,7 @@ package ns_telemetry{
                 $loc{lat} = $1;
                 $loc{lon} = $2;
                 $loc{course} = $this->compass;
-                print "\n Lon: $loc{lon} Lat: $loc{lat}\n";
+                print "\n Lon: $loc{lon} Lat: $loc{lat} Course: $loc{course}\n";
                 $loc{success} = 1;
             }else{
                 $loc{success} = 0;
