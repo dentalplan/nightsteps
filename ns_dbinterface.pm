@@ -16,7 +16,7 @@ package ns_dbinterface;
 	sub connectDB {
 		my $This = shift;
 		my $driver = "SQLite"; 
-		my $path = "/home/pi/nightstep/";
+		my $path = "/home/pi/nsdata/";
 		my $database = "lrdb.sqlite";
 		my $dsn = "DBI:$driver:dbname=$path$database";
 		my $userid = "";
