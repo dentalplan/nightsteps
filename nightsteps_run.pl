@@ -31,18 +31,17 @@ for (my $y=1996; ; $y++){
 		my $rah_places = &prepPlaces($rh_loc, $y, $DLen);
 		if ($rah_places){
             print "We have places!\n";
-            print $rah_places->[0]->{PAON};
-            foreach my $rh_pl ($rah_places){
-               
-			#    if ($telem->checkPointIsInShape($rh_pl, $polyco) == 1){
+#            print $rah_places->[0]->{PAON};
+            foreach my $rh_pl (@{$rah_places}){
+			    if ($telem->checkPointIsInShape($rh_pl, $polyco) == 1){
                     print "ID " . $rh_pl->{"tblCoord.ID"} .": Property in shape\n";
                     my $address = $rh_pl->{"SAON"} . " " . $rh_pl->{"PAON"}  . " " . $rh_pl->{"Street"};
                     my $price = $rh_pl->{"Price"};
                     my $year = substr $rh_pl->{"DateOfTransfer"}, 0, 4;
 			        `espeak "$address sold in $year for $price pounds" --stdout | aplay -D default:Device`;
-             #   }else{
-             #       print "ID " . $rh_pl->{"tblCoord.ID"} . ": Property not in shape\n";
-             #   }
+                }else{
+                    print "ID " . $rh_pl->{"tblCoord.ID"} . ": Property not in shape\n";
+                }
             }
 		}
 	}else{
