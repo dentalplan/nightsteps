@@ -11,17 +11,17 @@ package ns_dbinterface;
 		my $this  = {};
 		bless $this, $class;
 		return $this;
-		}
+	}
 
 	sub connectDB {
-		my $This = shift;
+		my $this = shift;
+		my $database = shift;
 		my $driver = "SQLite"; 
 		my $path = "/home/pi/nsdata/";
-		my $database = "lrdb.sqlite";
 		my $dsn = "DBI:$driver:dbname=$path$database";
 		my $userid = "";
 		my $password = "";
-		$This->{dbh} = DBI->connect($dsn, $userid, $password, { RaiseError => 1 }) 
+		$this->{dbh} = DBI->connect($dsn, $userid, $password, { RaiseError => 1 }) 
 			      or die $DBI::errstr;
 #		return "ERROR: MSQL:\n Did not connect to (SQLITE){DB}: Maybe sqlite is not setup " unless defined $This->{Dbh};
 	}
@@ -45,10 +45,10 @@ package ns_dbinterface;
 	}
 
 	sub disconnectDB {
-        	my $this = shift;
-        	# connect to database (regular DBI)
-        	$this->{dbh}->disconnect;
-        	return;
+        my $this = shift;
+        # connect to database (regular DBI)
+        $this->{dbh}->disconnect;
+        return;
 		print "Disconnected from database\n";
 	}
 

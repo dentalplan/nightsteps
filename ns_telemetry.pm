@@ -36,6 +36,15 @@ package ns_telemetry{
         return $DLen;
     }
 
+    sub prepPolyCo{
+        my ($this, $rh_loc, $ra_shape) = @_;
+        my $DLen = $this->getDegreeToMetre($rh_loc);
+        my $poly = Math::Polygon->new(@{$ra_shape});
+        my $spun = $poly->rotate(centre=>[0,0], degrees=>$rh_loc->{course});
+        my $polyco = $this->convertPolyCoord($spun, $rh_loc, $DLen);
+
+    }
+
     sub convertPolyCoord{
         my ($this, $poly, $l, $DLen) = @_; 
     #    print "\nchecking incoming from spun\n";

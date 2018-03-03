@@ -13,7 +13,15 @@ package ns_audinterface{
         return $this;
     }
 
-    sub PPDckBasic1{
+    sub LRDBespeak1{
+        my ($this, $rh_pl) = @_;
+        my $address = $rh_pl->{"SAON"} . " " . $rh_pl->{"PAON"}  . " " . $rh_pl->{"Street"};
+        my $price = $rh_pl->{"Price"};
+        my $year = substr $rh_pl->{"DateOfTransfer"}, 0, 4;
+        `espeak "$address sold in $year for $price pounds" --stdout | aplay -D default:Device`;
+    }
+
+    sub LRDBckBasic1{
         my $this = shift;
         my $rah_do = shift; # pos, dist, price, year, hasSAON
         my $rh_param = shift; # minyear, maxyear, pricetune, pricediv, maxdist
