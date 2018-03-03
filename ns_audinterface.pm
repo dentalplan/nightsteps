@@ -13,6 +13,10 @@ package ns_audinterface{
         return $this;
     }
 
+    sub espeakWaitOnGPS{
+        `espeak "waiting on GPS" --stdout | aplay -D default:Device`;
+    }
+
     sub LRDBespeak1{
         my ($this, $rh_pl) = @_;
         my $address = $rh_pl->{"SAON"} . " " . $rh_pl->{"PAON"}  . " " . $rh_pl->{"Street"};

@@ -27,7 +27,7 @@ package ns_loopit{
 
     sub iterate{
         my $this = shift;
-        switch ($this->{logic}){
+        switch ($this->{_logic}){
             case "LRDBespeak1" { $this->LRDBespeak1It }
         }
     }
