@@ -28,15 +28,15 @@ package ns_audinterface{
     sub LRDBckBasic1{
         my $this = shift;
         my $rah_do = shift; # pos, dist, price, year, hasSAON
-        my $rh_param = shift; # minyear, maxyear, pricetune, pricediv, maxdist
+        my $pricetune = shift; # minyear, maxyear, pricetune, pricediv, maxdist
         my $rah_so;
-        my $yeardiff = $rh_param->{maxyear} - $rh_param->{minyear};
+        my $yeardiff = $this->{_maxyear} - $this->{_minyear};
         foreach my $rh_do (@{$rah_do}){
             my $rh_so = {};
             $rh_so->{panning} = $rh_do->{pos};
-            $rh_so->{startime} = $rh_do->{dist} / $rh_param->{maxdist};
-            $rh_so->{freq} = ($rh_do->{price} - $rh_param->{pricetune}) / $rh_param->{pricediv};
-            $rh_so->{gain} = (($rh_do->{year} - $rh_param->{minyear})+1) / ($yeardiff + 1); #added +1 to prevent dividing zero 
+            $rh_so->{startime} = $rh_do->{dist} / $this->{_maxdist};
+            $rh_so->{freq} = ($rh_do->{price} - $pricetune) / $this->{_pricediv};
+            $rh_so->{gain} = (($rh_do->{year} - $this->{_minyear})+1) / ($yeardiff + 1); #added +1 to prevent dividing zero 
             if ($rh_do->{hasSAON} == 1){
                 $rh_so->{dur} = 50;
             }else{

@@ -5,6 +5,7 @@ package ns_telemetry{
     use Math::Polygon;
     use Math::Polygon::Calc;
     use GIS::Distance;
+    use Math::Trig;
 
     sub new{
         my $class = shift;
@@ -34,6 +35,26 @@ package ns_telemetry{
         my $DLen->{lon} = $DLon->meters();
         $DLen->{lat} = $DLat->meters();
         return $DLen;
+    }
+
+    sub getDistanceInMeters{
+        my ($this, $l1, $l2) = @_;
+        my $distance = $this->{_gis}->distance( $l1->{lat}, $l1->{lon} => $l2->{lat}, $l2->{lon} );
+        return $distance->meters;
+    }
+
+    sub getPointToPointAngle{
+        my ($this, $l1, $l2) = @_;
+        my $delta_x = $l2->{lon} - $l1->{lon};
+        my $delta_y = $l2->{lat} - $l1->{lat};
+        my $radians = atan2($delta_y, $delta_x);
+        my $degrees = $radians * (180/pi);
+        return $degrees;
+    }
+
+    sub getLeftRightPosition{
+        my ($this, $angle1, $angle2) = @_;
+        my $diff = $angle2 - $angle1;
     }
 
     sub prepPolyCo{
