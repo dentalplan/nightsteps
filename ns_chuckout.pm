@@ -29,5 +29,10 @@ package ns_chuckout
         system "chuck $this->{_soundcard} chuck/so$ckline";
     }
 
+    sub waitTone{
+        my $this = shift;
+        system "chuck $this->{_soundcard} chuck/wait.ck";
+    }
+
 }
 1;

@@ -48,6 +48,12 @@ package ns_audinterface{
         $ck->basicOut($rah_so);
     }
 
+    sub chuckWaitOnGPS{
+        my $this = shift;
+        my $ck = ns_chuckout->new;
+        $ck->waitTone;
+    }
+
 
 }
 1;
