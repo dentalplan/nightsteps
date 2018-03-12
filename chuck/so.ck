@@ -1,7 +1,7 @@
 // FM synthesis by hand
 
-50 => float gmult;
-4 => float gbase;
+100 => float gmult;
+8 => float gbase;
 
 2000 => int lenms;
 lenms::ms => dur len;
@@ -20,15 +20,17 @@ float g[objects];
 if(me.args()){
     for(0 => int i; i < objects; i++){
         (i * 5) => int p;
-        Std.atof(me.arg(p+1)) => lr[i];
-        Std.atof(me.arg(p+2)) => float timefract;
-        (Std.atof(me.arg(p+3)) * gmult) + gbase => g[i];
+        Std.atof(me.arg(p+1)) => lr[i];                     // set panning
+        Std.atof(me.arg(p+2)) => float timefract;           // set timing
+        (Std.atof(me.arg(p+3)) * gmult) + gbase => g[i];    //
         Std.atof(me.arg(p+4)) => float freq;
         Std.atoi(me.arg(p+5))::ms => s[i];
         Std.ftoi(timefract * lenms) => int timepoint;
         timepoint::ms => t[i];
         SinOsc lo;
         freq => lo.freq;
+        <<< g[i] >>>;
+        <<< freq >>>;
         lo => o1[i];
         lo => o2[i];
     }
@@ -37,7 +39,7 @@ if(me.args()){
 }
 
 Noise n => dac;
-0.0005 => n.gain;
+0.01 => n.gain;
 0::ms => dur past;
 
 // time-loop

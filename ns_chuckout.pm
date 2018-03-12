@@ -7,8 +7,8 @@ package ns_chuckout
         my $class = shift;
         my $this  = {
 #            _type => shift,
-#            _soundcard => '--dac3',
-            _soundcard => '',
+            _soundcard => '--dac3',
+#            _soundcard => '',
         };
         bless $this, $class;
         return $this;
