@@ -39,5 +39,3 @@ while( past < len )
     1::samp => now;
     1::samp +=> past;
 }
-~                                                                                                                                                                                     
-~                               
