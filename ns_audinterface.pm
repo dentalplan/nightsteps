@@ -25,7 +25,7 @@ package ns_audinterface{
         `espeak "$address sold in $year for $price pounds" --stdout | aplay -D default:Device`;
     }
 
-    sub LRDBckBasic1{
+    sub LRDBchuckBasic1{
         my $this = shift;
         my $rah_do = shift; # pos, dist, price, year, hasSAON
         my $pricetune = shift; # minyear, maxyear, pricetune, pricediv, maxdist
