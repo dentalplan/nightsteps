@@ -37,7 +37,7 @@ package ns_telemetry{
         return $DLen;
     }
 
-    sub getDistanceInMeters{
+    sub getDistanceInMetres{
         my ($this, $l1, $l2) = @_;
         my $distance = $this->{_gis}->distance( $l1->{lat}, $l1->{lon} => $l2->{lat}, $l2->{lon} );
         return $distance->meters;
