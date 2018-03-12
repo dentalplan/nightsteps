@@ -101,7 +101,7 @@ package ns_loopit{
                     if ($this->{_telem}->checkPointIsInShape($rh_pl, $polyco) == 1){
                         my $l2 = {
                                     lon => $rh_pl->{Lon},
-                                    lat => $rh_pl->{lat},
+                                    lat => $rh_pl->{Lat},
                         };  
                         my $rh_do = {
                                         pos => 0,
