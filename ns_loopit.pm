@@ -102,7 +102,7 @@ package ns_loopit{
                         my $l2 = {
                                     lon => $rh_pl->{Lon},
                                     lat => $rh_pl->{lat},
-                        }  
+                        };  
                         my $rh_do = {
                                         pos => 0,
                                         dist => $this->{_telem}->getDistanceInMetres($rh_loc, $l2)/$this->{_maxdist},
