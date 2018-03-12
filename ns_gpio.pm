@@ -38,7 +38,7 @@ package ns_gpio{
         my $size = @sens;
         my $out = -1;
         for(my $i=$size; $i>0 && $out > -1; $i--){
-            if ($sens[$i] =~ m/(\D\D\D\D)\n/){
+            if ($sens[$i] =~ m/(\d\d\d\d)\n/){
                 $out = $1;
             }
         }   
