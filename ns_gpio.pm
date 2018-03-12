@@ -17,7 +17,7 @@ package ns_gpio{
 
     sub setupReading{
         my $this = shift;
-        system "touch $this->{_datapath}$this->{_channel}.$this->{_mode}";
+#        system "touch $this->{_datapath}$this->{_channel}.$this->{_mode}";
     }
 
     sub readValue{
@@ -37,11 +37,11 @@ package ns_gpio{
         my @sens = <SENSOUT>;
         my $size = @sens;
         my $out = -1;
-        for(my $i=$size; $i>0 && $out > -1; $i--){
-            chomp $sens[$i]
+        for(my $i=$size-1; $i>0 && $out == -1; $i--){
+            chomp $sens[$i];
             if ($sens[$i] =~ m/(\d\d\d\d)/){
                 $out = $1;
-            }
+			}
         }   
         return $out;
     }
