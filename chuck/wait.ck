@@ -6,6 +6,7 @@
 
 SinOsc w;
 200 => w.freq;
+0.5 => w.gain;
 0::ms => dur past;
 900::ms => dur start;
 
@@ -16,6 +17,6 @@ while( past < len )
         w => dac;
     }
     // advance time by 1 samp
-    10::ms => now;
-    10::ms +=> past;
+    100::ms => now;
+    100::ms +=> past;
 }
