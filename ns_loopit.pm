@@ -99,17 +99,20 @@ package ns_loopit{
                 foreach my $rh_pl (@{$rah_places}){
                     print "$rh_pl->{SAON} $rh_pl->{PAON} $rh_pl->{Street}\n";
                     if ($this->{_telem}->checkPointIsInShape($rh_pl, $polyco) == 1){
-                        
+                        my $l2 = {
+                                    lon => $rh_pl->{Lon},
+                                    lat => $rh_pl->{lat},
+                        }  
                         my $rh_do = {
                                         pos => 0,
-                                        dist => $this->{_telem}->getDistanceInMetres()/$this->{_maxdist},
+                                        dist => $this->{_telem}->getDistanceInMetres($rh_loc, $l2)/$this->{_maxdist},
                                         price => $rh_pl->{Price},
                                         year => int(substr($rh_pl->{DateOfTransfer},0,4)),
                                         SAON => $rh_pl->{SAON},
                         };
                     }
                 }
-                $this->{_aud}->LRDBchuck1($rah_do, $pricetune);
+                $this->{_aud}->LRDBchuckBasic1($rah_do, $pricetune);
             }
         }else{
             $this->{_aud}->chuckWaitOnGPS
