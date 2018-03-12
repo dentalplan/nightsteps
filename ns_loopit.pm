@@ -4,6 +4,7 @@ package ns_loopit{
     use ns_dbinterface;
     use ns_telemetry;
     use ns_audinterface;
+    use ns_gpio;
     use Math::Polygon;
     use Math::Polygon::Calc;
     use Switch;
@@ -30,6 +31,7 @@ package ns_loopit{
         my $this = shift;
         switch ($this->{_logic}){
             case "LRDBespeak1"{ $this->LRDBespeak1Setup}
+            case "LRDBchuck1"{ $this->LRDBchuck1Setup}
         }
     }
 
@@ -37,6 +39,7 @@ package ns_loopit{
         my $this = shift;
         switch ($this->{_logic}){
             case "LRDBespeak1" { $this->LRDBespeak1It }
+            case "LRDBchuck1"{ $this->LRDBchuck1It}
         }
     }
 
@@ -74,6 +77,7 @@ package ns_loopit{
     sub LRDBchuck1Setup{
         my $this = shift;
         $this->{_db}->connectDB('lrdb.sqlite');
+        $this->{_sens} = ns_gpio->new('a', 7);
         $this->{_aud}->{_minyear} = 1996;
         $this->{_aud}->{_maxyear} = Time::Piece->year;
         $this->{_aud}->{_pricediv} = 100;
@@ -89,7 +93,8 @@ package ns_loopit{
             my $condition = "";
             my $rah_places = $this->LRDBprepPlaces($rh_loc, $DLen, $condition);
             if ($rah_places){
-                my $pricetune = $this->LRDBaveragePrice($rah_places);
+#                my $pricetune = $this->LRDBaveragePrice($rah_places);
+                my $pricetune = $this->{_sens}->readValue * 1953;
                 my $rah_do;
                 foreach my $rh_pl (@{$rah_places}){
                     if ($this->{_telem}->checkPointIsInShape($rh_pl, $polyco) == 1){
