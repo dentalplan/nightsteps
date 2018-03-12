@@ -79,7 +79,7 @@ package ns_loopit{
         $this->{_db}->connectDB('lrdb.sqlite');
         $this->{_sens} = ns_gpio->new('a', 7);
         $this->{_aud}->{_minyear} = 1996;
-        $this->{_aud}->{_maxyear} = Time::Piece->year;
+        $this->{_aud}->{_maxyear} = $this->{_t}->year;
         $this->{_aud}->{_pricediv} = 100;
     }
     
