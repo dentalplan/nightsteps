@@ -97,6 +97,7 @@ package ns_loopit{
                 my $pricetune = $this->{_sens}->readValue * 1953;
                 my $rah_do;
                 foreach my $rh_pl (@{$rah_places}){
+                    print "$rh_pl->{SAON} $rh_pl->{PAON} $rh_pl->{Street}\n";
                     if ($this->{_telem}->checkPointIsInShape($rh_pl, $polyco) == 1){
                         
                         my $rh_do = {
