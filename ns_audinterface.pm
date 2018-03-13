@@ -2,12 +2,14 @@ package ns_audinterface{
 #the audio interface layer translates data structures into audio parameters;
     use strict;
     use warnings;
+    use ns_testtools;
     use ns_chuckout;
 
     sub new {
         my $class = shift;
         my $this  = {
             _mode => shift,
+            _testtools => ns_testtools->new,
         };
         bless $this, $class;
         return $this;
@@ -42,6 +44,7 @@ package ns_audinterface{
             }else{
                 $rh_so->{dur} = 50;
             }
+            $this->{_testtools}->printRefHashValues($rh_so);
             push @rah_so, $rh_so;
         }
         my $ck = ns_chuckout->new;
