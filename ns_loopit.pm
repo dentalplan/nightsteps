@@ -135,11 +135,11 @@ package ns_loopit{
                      $condition .
                      "tblCoord.Type = \"location\"";
         my $orderby = " ORDER BY DateOfTransfer ";
-        my %rah = ( fields=>\@field,
+        my %sqlhash = ( fields=>\@field,
                     table=>$from,
                     where=>$where,
                     orderby=>$orderby);
-        my $rah = $this->{_db}->runSqlHash_rtnAoHRef(\%rah);
+        my $rah = $this->{_db}->runSqlHash_rtnAoHRef(\%sqlhash);
         return $rah;
     }
     
