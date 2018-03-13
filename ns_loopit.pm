@@ -145,6 +145,7 @@ package ns_loopit{
     
     sub LRDBaveragePrice{
         my ($this, $rah) = shift;
+        print $rah . "\n";
         my $pricetotal = 0;
         my $size = @{$rah};
         foreach my $rh (@{$rah}){
