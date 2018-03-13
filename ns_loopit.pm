@@ -109,6 +109,7 @@ package ns_loopit{
                                         price => $rh_pl->{Price},
                                         year => int(substr($rh_pl->{DateOfTransfer},0,4)),
                                         SAON => $rh_pl->{SAON},
+                                        print "price is $rh_pl->{Price} vs tune of $pricetune\n";
                         };
                     }
                 }
