@@ -93,8 +93,8 @@ package ns_loopit{
             my $condition = "";
             my $rah_places = $this->LRDBprepPlaces($rh_loc, $DLen, $condition);
             if ($rah_places){
-#                my $pricetune = $this->LRDBaveragePrice($rah_places);
-                my $pricetune = $this->{_sens}->readValue * 1953;
+                my $pricetune = $this->LRDBaveragePrice($rah_places);
+#                my $pricetune = $this->{_sens}->readValue * 1953;
                 my $rah_do;
                 foreach my $rh_pl (@{$rah_places}){
 #                    print "$rh_pl->{SAON} $rh_pl->{PAON} $rh_pl->{Street}\n";
