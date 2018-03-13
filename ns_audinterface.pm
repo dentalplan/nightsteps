@@ -37,12 +37,12 @@ package ns_audinterface{
             $this->{_testtools}->printRefHashValues($this);
             my $rh_so = {
                         panning => $rh_do->{pos},
-                        startime => $rh_do->{dist} / $this->{_maxdist},
+                        starttime => $rh_do->{dist} / $this->{_maxdist},
                         freq => ($rh_do->{price} - $pricetune) / $this->{_pricediv},
                         gain => (($rh_do->{year} - $this->{_minyear})+1) / ($yeardiff + 1), #added +1 to prevent dividing zero 
             };
             if ($rh_do->{hasSAON} == 1){
-                $rh_so->{dur} = 50;
+                $rh_so->{dur} = 60;
             }else{
                 $rh_so->{dur} = 50;
             }
