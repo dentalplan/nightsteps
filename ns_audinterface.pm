@@ -37,6 +37,7 @@ package ns_audinterface{
             print "\nAUD OBJECT ATTRIBUTES:\n";
             $this->{_testtools}->printRefHashValues($this);
             print "\nDATA OBJECT VALS:\n";
+            $this->{_testtools}->printRefHashValues($rh_do);
             my $rh_so = {
                         panning => $rh_do->{pos},
                         starttime => $rh_do->{dist} / $this->{_maxdist},
