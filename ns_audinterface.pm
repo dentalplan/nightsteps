@@ -29,7 +29,7 @@ package ns_audinterface{
         my $this = shift;
         my $rah_do = shift; # pos, dist, price, year, hasSAON
         my $pricetune = shift; # minyear, maxyear, pricetune, pricediv, maxdist
-        my $rah_so;
+        my @rah_so;
         my $yeardiff = $this->{_maxyear} - $this->{_minyear};
         foreach my $rh_do (@{$rah_do}){
             my $rh_so = {};
@@ -42,10 +42,10 @@ package ns_audinterface{
             }else{
                 $rh_so->{dur} = 50;
             }
-            push @{$rah_so}, $rh_so;
+            push @rah_so, $rh_so;
         }
         my $ck = ns_chuckout->new;
-        $ck->basicOut($rah_so);
+        $ck->basicOut(\@rah_so);
     }
 
     sub chuckWaitOnGPS{
