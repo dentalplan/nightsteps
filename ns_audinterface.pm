@@ -34,6 +34,7 @@ package ns_audinterface{
         my @rah_so;
         my $yeardiff = $this->{_maxyear} - $this->{_minyear};
         foreach my $rh_do (@{$rah_do}){
+            $this->{_testtools}->printRefHashValues($this);
             my $rh_so = {
                         panning => $rh_do->{pos},
                         startime => $rh_do->{dist} / $this->{_maxdist},
