@@ -26,7 +26,9 @@ package ns_chuckout
             $ckline .= ":" . $rh->{freq};
             $ckline .= ":" . $rh->{dur};
         }
-        system "chuck $this->{_soundcard} chuck/so$ckline";
+        my $ck = "chuck $this->{_soundcard} chuck/so$ckline";
+        print "Chuck to run: $ck\n";
+        system $ck;
     }
 
     sub waitTone{
