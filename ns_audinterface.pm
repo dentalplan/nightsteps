@@ -34,7 +34,9 @@ package ns_audinterface{
         my @rah_so;
         my $yeardiff = $this->{_maxyear} - $this->{_minyear};
         foreach my $rh_do (@{$rah_do}){
+            print "\nAUD OBJECT ATTRIBUTES:\n";
             $this->{_testtools}->printRefHashValues($this);
+            print "\nDATA OBJECT VALS:\n";
             my $rh_so = {
                         panning => $rh_do->{pos},
                         starttime => $rh_do->{dist} / $this->{_maxdist},
@@ -46,6 +48,7 @@ package ns_audinterface{
             }else{
                 $rh_so->{dur} = 50;
             }
+            print "\nSONIC OBJECT VALS:\n";
             $this->{_testtools}->printRefHashValues($rh_so);
             push @rah_so, $rh_so;
         }
