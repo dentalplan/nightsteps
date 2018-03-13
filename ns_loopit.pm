@@ -17,7 +17,6 @@ package ns_loopit{
         my $this = {
             _listenshape => $rh->{listenshape},
             _logic => $rh->{logic},
-            _maxdist => $rh->{maxdist},
             _testtools => ns_testtools->new,
             _telem => ns_telemetry->new,
             _aud => ns_audinterface->new,
@@ -107,8 +106,8 @@ package ns_loopit{
                                     lat => $rh_pl->{Lat},
                         };  
                         my $rh_do = {
-                                        pos => 0,
-                                        dist => $this->{_telem}->getDistanceInMetres($rh_loc, $l2)/$this->{_maxdist},
+                                        pos => 0.5,
+                                        dist => $this->{_telem}->getDistanceInMetres($rh_loc, $l2),
                                         price => $rh_pl->{Price},
                                         year => int(substr($rh_pl->{DateOfTransfer},0,4)),
                                         SAON => $rh_pl->{SAON},

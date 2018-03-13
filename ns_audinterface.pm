@@ -38,10 +38,16 @@ package ns_audinterface{
             $this->{_testtools}->printRefHashValues($this);
             print "\nDATA OBJECT VALS:\n";
             $this->{_testtools}->printRefHashValues($rh_do);
+            my $hetfreq = ($rh_do->{price} - $pricetune) / $this->{_pricediv};
+            my $outfreq = sqrt($hetfreq*$hetfreq);
+            if ($outfreq > 12000){
+                $outfreq = 12000;
+            }
+
             my $rh_so = {
                         panning => $rh_do->{pos},
                         starttime => $rh_do->{dist} / $this->{_maxdist},
-                        freq => ($rh_do->{price} - $pricetune) / $this->{_pricediv},
+                        freq => 
                         gain => (($rh_do->{year} - $this->{_minyear})+1) / ($yeardiff + 1), #added +1 to prevent dividing zero 
             };
             if ($rh_do->{hasSAON} == 1){
