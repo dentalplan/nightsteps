@@ -33,17 +33,16 @@ package ns_audinterface{
         my $pricetune = shift; # minyear, maxyear, pricetune, pricediv, maxdist
         my @rah_so;
         my $yeardiff = $this->{_maxyear} - $this->{_minyear};
+        print "\nAUD OBJECT ATTRIBUTES:\n";
+        $this->{_testtools}->printRefHashValues($this);
         foreach my $rh_do (@{$rah_do}){
-            print "\nAUD OBJECT ATTRIBUTES:\n";
-            $this->{_testtools}->printRefHashValues($this);
             print "\nDATA OBJECT VALS:\n";
             $this->{_testtools}->printRefHashValues($rh_do);
             my $hetfreq = ($rh_do->{price} - $pricetune) / $this->{_pricediv};
             my $outfreq = sqrt($hetfreq*$hetfreq);
-            if ($outfreq > 12000){
-                $outfreq = 12000;
+            if ($outfreq > 10000){
+                $outfreq = 0; #lowpass......
             }
-
             my $rh_so = {
                         panning => $rh_do->{pos},
                         starttime => $rh_do->{dist} / $this->{_maxdist},
