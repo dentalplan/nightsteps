@@ -47,7 +47,7 @@ package ns_audinterface{
             my $rh_so = {
                         panning => $rh_do->{pos},
                         starttime => $rh_do->{dist} / $this->{_maxdist},
-                        freq => 
+                        freq => $outfreq, 
                         gain => (($rh_do->{year} - $this->{_minyear})+1) / ($yeardiff + 1), #added +1 to prevent dividing zero 
             };
             if ($rh_do->{hasSAON} == 1){
