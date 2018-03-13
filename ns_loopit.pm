@@ -1,6 +1,7 @@
 package ns_loopit{
     use strict;
     use warnings;
+    use ns_testtools;
     use ns_dbinterface;
     use ns_telemetry;
     use ns_audinterface;
@@ -17,6 +18,7 @@ package ns_loopit{
             _listenshape => $rh->{listenshape},
             _logic => $rh->{logic},
             _maxdist => $rh->{maxdist},
+            _testtools => ns_testtools->new,
             _telem => ns_telemetry->new,
             _aud => ns_audinterface->new,
             _db => ns_dbinterface->new,
@@ -95,7 +97,7 @@ package ns_loopit{
             if ($rah_places){
                 my $pricetune = $this->LRDBaveragePrice($rah_places);
 #                my $pricetune = $this->{_sens}->readValue * 1953;
-                my $rah_do;
+                my @do;
                 foreach my $rh_pl (@{$rah_places}){
 #                    print "$rh_pl->{SAON} $rh_pl->{PAON} $rh_pl->{Street}\n";
                     if ($this->{_telem}->checkPointIsInShape($rh_pl, $polyco) == 1){
@@ -111,9 +113,10 @@ package ns_loopit{
                                         SAON => $rh_pl->{SAON},
                         };
                         print "price is $rh_pl->{Price} vs tune of $pricetune\n";
+                        push @do, $rh_do
                     }
                 }
-                $this->{_aud}->LRDBchuckBasic1($rah_do, $pricetune);
+                $this->{_aud}->LRDBchuckBasic1(\@do, $pricetune);
             }
         }else{
             $this->{_aud}->chuckWaitOnGPS;

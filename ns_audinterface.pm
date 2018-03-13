@@ -34,11 +34,12 @@ package ns_audinterface{
         my @rah_so;
         my $yeardiff = $this->{_maxyear} - $this->{_minyear};
         foreach my $rh_do (@{$rah_do}){
-            my $rh_so = {};
-            $rh_so->{panning} = $rh_do->{pos};
-            $rh_so->{startime} = $rh_do->{dist} / $this->{_maxdist};
-            $rh_so->{freq} = ($rh_do->{price} - $pricetune) / $this->{_pricediv};
-            $rh_so->{gain} = (($rh_do->{year} - $this->{_minyear})+1) / ($yeardiff + 1); #added +1 to prevent dividing zero 
+            my $rh_so = {
+                        panning => $rh_do->{pos},
+                        startime => $rh_do->{dist} / $this->{_maxdist},
+                        freq => ($rh_do->{price} - $pricetune) / $this->{_pricediv},
+                        gain => (($rh_do->{year} - $this->{_minyear})+1) / ($yeardiff + 1), #added +1 to prevent dividing zero 
+            };
             if ($rh_do->{hasSAON} == 1){
                 $rh_so->{dur} = 50;
             }else{
