@@ -87,7 +87,7 @@ package ns_telemetry{
 
     sub checkPointIsInShape{
         my ($this, $rh_pl, $polyco) = @_;
-        print "test locale: " . $rh_pl->{Lon} . ", " . $rh_pl->{Lat} . "\n";
+#        print "test locale: " . $rh_pl->{Lon} . ", " . $rh_pl->{Lat} . "\n";
         my $rtn;
         my @point = ($rh_pl->{Lon}, $rh_pl->{Lat});
         if ($polyco->contains(\@point)){
