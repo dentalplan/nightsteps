@@ -21,6 +21,7 @@ for (my $i=0;;$i++){
     $it->iterate;
 
     my $read = $switch1->readValue;
+    print "SWITCH READING: $read\n";
     if ($read > 1000){
         $it->{logic} => "LRDBespeak1";
     }else{ 
