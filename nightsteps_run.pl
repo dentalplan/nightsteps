@@ -23,9 +23,11 @@ for (my $i=0;;$i++){
     my $read = $switch1->readValue;
     print "SWITCH READING: $read\n";
     print "LOGIC: $it->{_logic}\n";
-    if ($read > 1000){
+    if ($read > 900){
+        print "over 900\n";
         $it->{_logic} => "LRDBespeak1";
     }else{ 
+        print "under 900\n";
         $it->{_logic} => "LRDBchuck1";
     }
 
