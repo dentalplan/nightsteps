@@ -18,7 +18,6 @@ my $it = ns_loopit->new(    {
                             });
 
 for (my $i=0;;$i++){
-    $it->iterate;
 
     my $read = $switch1->readValue;
     print "SWITCH READING: $read\n";
@@ -30,6 +29,8 @@ for (my $i=0;;$i++){
         print "under 900\n";
         $it->{_logic} = "LRDBchuck1";
     }
+
+    $it->iterate;
 
     if ($i==1500){
         $i = 0;
