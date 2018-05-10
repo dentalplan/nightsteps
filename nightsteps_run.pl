@@ -25,10 +25,10 @@ for (my $i=0;;$i++){
     print "LOGIC: $it->{_logic}\n";
     if ($read > 900){
         print "over 900\n";
-        $it->{_logic} => "LRDBespeak1";
+        $it->{_logic} = "LRDBespeak1";
     }else{ 
         print "under 900\n";
-        $it->{_logic} => "LRDBchuck1";
+        $it->{_logic} = "LRDBchuck1";
     }
 
     if ($i==1500){
