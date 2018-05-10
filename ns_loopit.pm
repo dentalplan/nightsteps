@@ -56,6 +56,7 @@ package ns_loopit{
     sub LRDBespeak1It{
         my $this = shift;
         if ($this->{_it} > $this->{_yardstick}){ $this->{_it}=1996; }
+        print "Looking for year $this->{_it}\n";
         my $rh_loc = $this->{_telem}->readGPS;
         if ($rh_loc->{success} == 1){
             print "GPS success!\n";
