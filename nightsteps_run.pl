@@ -24,9 +24,9 @@ for (my $i=0;;$i++){
     print "SWITCH READING: $read\n";
     print "LOGIC: $it->{logic}\n";
     if ($read > 1000){
-        $it->{logic} => "LRDBespeak1";
+        $it->{_logic} => "LRDBespeak1";
     }else{ 
-        $it->{logic} => "LRDBchuck1";
+        $it->{_logic} => "LRDBchuck1";
     }
 
     if ($i==1500){
