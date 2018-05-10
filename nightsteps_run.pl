@@ -12,7 +12,6 @@ my $switch1 = ns_gpio->new('a', 0);
 
 my $it = ns_loopit->new(    {    
                                 listenshape => \@listenshape,
-#                                logic => "LRDBespeak1",
                                 logic => "LRDBchuck1",
                                 maxdist => $maxdist,
                             });
@@ -24,10 +23,24 @@ for (my $i=0;;$i++){
     print "LOGIC: $it->{_logic}\n";
     if ($read > 900){
         print "over 900\n";
-        $it->{_logic} = "LRDBespeak1";
+        if ($it->{_logic} ne "LRDBespeak1"){
+            $it = ns_loopit->new(    {
+                                      listenshape => \@listenshape,
+                                      logic => "LRDBespeak1",
+                                      maxdist => $maxdist,
+                                    });
+
+        };
     }else{ 
         print "under 900\n";
-        $it->{_logic} = "LRDBchuck1";
+        if ($it->{_logic} ne "LRDBchuck1"){
+            $it = ns_loopit->new(    {
+                                    listenshape => \@listenshape,
+                                    logic => "LRDBchuck1",
+                                    maxdist => $maxdist,
+                                  });
+
+        }
     }
 
     $it->iterate;
