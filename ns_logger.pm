@@ -27,7 +27,8 @@ package ns_logger{
     sub logSensorData{
         my $this = shift;
         my $rhGPS = $this->{_loop}->{_telem}->readGPS;
-        my $compass = $this->{_loop}->{_telem}->compass;
+#        my $compass = $this->{_loop}->{_telem}->compass;
+        my $compass = "";
 #        my $time = $this->{_loop}->{_t}->datetime;
         my $time = localtime;
         my $raSensor = $this->{_sensAnalogue}->readAllOfMyMode;
