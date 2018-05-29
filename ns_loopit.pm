@@ -6,10 +6,12 @@ package ns_loopit{
     use ns_telemetry;
     use ns_audinterface;
     use ns_gpio;
+    use ns_logger;
     use Math::Polygon;
     use Math::Polygon::Calc;
     use Switch;
     use Time::Piece;
+    use Time::HiRes qw( usleep );
 
     sub new{
         my $class = shift;
@@ -24,6 +26,7 @@ package ns_loopit{
             _t => Time::Piece->new,      
         };
         bless $this, $class;
+        $this->{_logger} = ns_logger->new;
         $this->loopitSetup;
         return $this;
     }
@@ -41,11 +44,13 @@ package ns_loopit{
         switch ($this->{_logic}){
             case "LRDBespeak1" { $this->LRDBespeak1It }
             case "LRDBchuck1"{ $this->LRDBchuck1It}
+            case "dataLogger" { $this->dataLoggerIt }
         }
     }
 
-    ##LRDB Block 
-    ### espeak 1
+    ######################################################
+    ### LRDB Block  ######################################
+    ### espeak 1    ######################################
     sub LRDBespeak1Setup{
         my $this = shift;
         $this->{_it} = 1996;
@@ -75,7 +80,7 @@ package ns_loopit{
         $this->{_it}++;
     }
 
-    ### chuck 1
+    ### chuck 1     ########################################
     sub LRDBchuck1Setup{
         my $this = shift;
         $this->{_db}->connectDB('lrdb.sqlite');
@@ -124,7 +129,7 @@ package ns_loopit{
         }
     }
 
-    ### generic LRDB
+    ######  generic LRDB    ##############################################################
     sub LRDBprepPlaces{ 
         my ($this, $rh_loc, $DLen, $condition) = @_;
         my $distmet = 20;
@@ -157,6 +162,15 @@ package ns_loopit{
         }   
         my $avgprice = $pricetotal / $size;
         return $avgprice;
+    }
+
+    ######################################################
+    ### Logger Block  ######################################
+    
+    sub dataLoggerIt{
+        my $this = shift;
+        $this->logSensorData;
+        usleep(100);
     }
 }
 1;

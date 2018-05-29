@@ -24,15 +24,25 @@ package ns_gpio{
         my $this = shift;
         my $out;
         switch ($this->{_mode}){
-            case 'a' {$out = $this->readAnalogue;}
+            case 'a' {$out = $this->readAnalogue($this->{_channel});}
             case 'd' {$out = $this->readDigital;}
 #            case 'c' {$out = $this->readCompass;}
         }
         return $out;
     }
 
-    sub readAnalogue{
+	sub readAllOfMyMode{
         my $this = shift;
+        my @val;
+        for (my $i=0; $i<8; $i++){
+            my $read = $this->readAnalogue($i);
+            push @val, $read;
+        }
+        return \@val;
+	}
+
+    sub readAnalogue{
+        my ($this, $channel) = @_;
         open SENSOUT, "<$this->{_datapath}$this->{_channel}.$this->{_mode}" or die $!;
         my @sens = <SENSOUT>;
         my $size = @sens;

@@ -18,30 +18,30 @@ my $it = ns_loopit->new(    {
 
 for (my $i=0;;$i++){
 
-    my $read = $switch1->readValue;
-    print "SWITCH READING: $read\n";
-    print "LOGIC: $it->{_logic}\n";
-    if ($read > 900){
-        print "over 900\n";
-        if ($it->{_logic} ne "LRDBespeak1"){
-            $it = ns_loopit->new(    {
-                                      listenshape => \@listenshape,
-                                      logic => "LRDBespeak1",
-                                      maxdist => $maxdist,
-                                    });
-
-        };
-    }else{ 
-        print "under 900\n";
-        if ($it->{_logic} ne "LRDBchuck1"){
-            $it = ns_loopit->new(    {
-                                    listenshape => \@listenshape,
-                                    logic => "LRDBchuck1",
-                                    maxdist => $maxdist,
-                                  });
-
-        }
-    }
+#    my $read = $switch1->readValue;
+#    print "SWITCH READING: $read\n";
+#    print "LOGIC: $it->{_logic}\n";
+#    if ($read > 900){
+#        print "over 900\n";
+#        if ($it->{_logic} ne "LRDBespeak1"){
+#            $it = ns_loopit->new(    {
+#                                      listenshape => \@listenshape,
+#                                      logic => "LRDBespeak1",
+#                                      maxdist => $maxdist,
+#                                    });
+#
+#        };
+#    }else{ 
+#        print "under 900\n";
+#        if ($it->{_logic} ne "LRDBchuck1"){
+#            $it = ns_loopit->new(    {
+#                                    listenshape => \@listenshape,
+#                                    logic => "LRDBchuck1",
+#                                    maxdist => $maxdist,
+#                                  });
+#
+#        }
+#    }
 
     $it->iterate;
 
@@ -50,5 +50,6 @@ for (my $i=0;;$i++){
 #        open(my $fh, "<", "/home/pi/nsdata/kill.switch");
     }
 }
+
 
 
