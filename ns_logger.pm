@@ -33,7 +33,7 @@ package ns_logger{
         open LOG, ">>$this->{_logfile}" or die $!;
         print LOG "$time,";
         if ($rhGPS->{success} == 1){
-            print LOG "$rhGPS->{time},$rhGPS->{lat},$rhGPS->{lon},$rh->GPS{course},";
+            print LOG "$rhGPS->{time},$rhGPS->{lat},$rhGPS->{lon},$rhGPS->{course},";
         }else{
             print LOG ",,,,";
         }
