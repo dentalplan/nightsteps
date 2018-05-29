@@ -26,7 +26,7 @@ package ns_loopit{
             _t => Time::Piece->new,      
         };
         bless $this, $class;
-        $this->{_logger} = ns_logger->new;
+        $this->{_logger} = ns_logger->new($this);
         $this->loopitSetup;
         return $this;
     }
