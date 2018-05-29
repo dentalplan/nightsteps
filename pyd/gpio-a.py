@@ -22,5 +22,6 @@ while True:
 			a = mcp.read_adc(i)
 			value = '{num:04d}'.format(num=a)
 			file[i].write(str(value) + "\n")
-		    time.sleep(0.01)
+            time.sleep(0.01)
+
 
