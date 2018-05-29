@@ -7,6 +7,9 @@ compass = mag3110.compass()
 compass.loadCalibration()
 f = open(path + '0.c', 'w')
 while True:
-    c = compass.getBearing()
-    print >> f, str(c) + "\n"
+    try:
+        c = compass.getBearing()
+    except:
+        print "Error getting compass"
+    print >> f, str(c) 
     time.sleep(0.01)
