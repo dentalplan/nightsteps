@@ -20,10 +20,11 @@ while True:
     for c in range(0,1000):
         for i in range(0,8):
             a[i] = mcp.read_adc(i)
-            value = '{num:04d}'.format(num=a)
+            value = '{num:04d}'.format(num=a[i])
             filelist[i].write(str(value) + "\n")
             time.sleep(0.01)
 
     for i in range(0,8):
         filelist.append(open(path + str(i) + ".a", "w"))
+        value = '{num:04d}'.format(num=a[i])
         filelist[i].write(str(value) + "\n")
