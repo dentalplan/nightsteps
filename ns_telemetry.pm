@@ -113,8 +113,8 @@ package ns_telemetry{
                 $loc{time} = $1;
                 $loc{lat} = $2;
                 $loc{lon} = $3;
-#                $loc{course} = $this->compass;
-                $loc{course} = $4;
+                $loc{course} = $this->compass;
+#                $loc{course} = $4;
 #                print "\n Lon: $loc{lon} Lat: $loc{lat} Course: $loc{course}\n";
                 $loc{success} = 1;
             }else{
