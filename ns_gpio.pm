@@ -43,7 +43,7 @@ package ns_gpio{
 
     sub readAnalogue{
         my ($this, $channel) = @_;
-        open SENSOUT, "<$this->{_datapath}$this->{_channel}.$this->{_mode}" or die $!;
+        open SENSOUT, "<$this->{_datapath}$channel.$this->{_mode}" or die $!;
         my @sens = <SENSOUT>;
         my $size = @sens;
         my $out = -1;
@@ -53,6 +53,7 @@ package ns_gpio{
                 $out = $1;
 			}
         }   
+        print "sensor $channel: $out\n";
         return $out;
     }
 
