@@ -9,7 +9,7 @@ SPI_DEVICE = 0
 mcp = Adafruit_MCP3008.MCP3008(spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE))
 
 filelist = []
-a = []
+a = [0,0,0,0,0,0,0,0]
 path = "/home/pi/nsdata/gpio/"
 for i in range(0,8):
     filelist.append(open(path + str(i) + ".a", "w"))
