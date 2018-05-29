@@ -12,7 +12,7 @@ my $switch1 = ns_gpio->new('a', 0);
 
 my $it = ns_loopit->new(    {    
                                 listenshape => \@listenshape,
-                                logic => "LRDBchuck1",
+                                logic => "dataLogger",
                                 maxdist => $maxdist,
                             });
 
