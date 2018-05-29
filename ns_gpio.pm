@@ -26,7 +26,7 @@ package ns_gpio{
         switch ($this->{_mode}){
             case 'a' {$out = $this->readAnalogue($this->{_channel});}
             case 'd' {$out = $this->readDigital;}
-#            case 'c' {$out = $this->readCompass;}
+            case 'c' {$out = $this->readCompass;}
         }
         return $out;
     }
@@ -55,6 +55,23 @@ package ns_gpio{
         }   
 #        print "sensor $channel: $out\n";
         return $out;
+    }
+
+    sub readCompass{
+        my $this = shift;
+        open SENSOUT, "<$this->{_datapath}0.$this->{_mode}" or die $!;
+        my @sens = <SENSOUT>;
+        my $size = @sens;
+        my $out = -1;
+        for(my $i=$size-1; $i>0 && $out == -1; $i--){
+            chomp $sens[$i];
+            if ($sens[$i] =~ m/([0-9]+\.[0-9]+)/){
+                $out = $1;
+			}
+        }   
+        print "compass:  $out\n";
+        return $out;
+
     }
 
     sub readDigital{

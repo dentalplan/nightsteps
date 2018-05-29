@@ -2,6 +2,7 @@ package ns_telemetry{
     
     use strict;
     use warnings;
+    use ns_gpio;
     use Math::Polygon;
     use Math::Polygon::Calc;
     use GIS::Distance;
@@ -13,19 +14,19 @@ package ns_telemetry{
             _gis => GIS::Distance->new(),
             _gpslog => 'gpsout.txt',
             _gpspath => '/home/pi/nsdata/',
-            _pycomp => 'ns_compass.py',
-            _pypath => '/home/pi/nightsteps/',
+            _compass => ns_gpio->new('c',0),
+#            _pypath => '/home/pi/nightsteps/',
         };
         bless $this, $class;
         return $this;
     }
 
-    sub compass{
-        my $this = shift;
-        my @result = `python $this->{_pypath}$this->{_pycomp}`;
-        chomp $result[1];
-        return $result[1];
-    }
+#    sub compass{
+#        my $this = shift;
+#        my @result = `python $this->{_pypath}$this->{_pycomp}`;
+#        chomp $result[1];
+#        return $result[1];
+#    }
 
     sub getDegreeToMetre{
         my $this = shift;
@@ -113,7 +114,7 @@ package ns_telemetry{
                 $loc{time} = $1;
                 $loc{lat} = $2;
                 $loc{lon} = $3;
-                $loc{course} = $this->compass;
+                $loc{course} = $this->{_compass}->readValue;
 #                $loc{course} = $4;
 #                print "\n Lon: $loc{lon} Lat: $loc{lat} Course: $loc{course}\n";
                 $loc{success} = 1;
