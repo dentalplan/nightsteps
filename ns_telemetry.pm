@@ -109,11 +109,12 @@ package ns_telemetry{
         for (my $i=-1; $i>=($size * -1) && $loc{success} == 0; $i-- ){
             chomp $gps[$i];
 #            print $gps[$i];
-            if($gps[$i] =~ m/.+ TPV, Time: (.+), Lat: (.+), Lon: (.+), Speed: .+, Heading: .*/){
+            if($gps[$i] =~ m/.+ TPV, Time: (.+), Lat: (.+), Lon: (.+), Speed: .+, Heading: (.*)/){
                 $loc{time} = $1;
                 $loc{lat} = $2;
                 $loc{lon} = $3;
-                $loc{course} = $this->compass;
+#                $loc{course} = $this->compass;
+                $loc{course} = $4;
 #                print "\n Lon: $loc{lon} Lat: $loc{lat} Course: $loc{course}\n";
                 $loc{success} = 1;
             }else{
