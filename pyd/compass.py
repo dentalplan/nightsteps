@@ -1,4 +1,5 @@
 import mag3110
+import time
 
 path = "/home/pi/nsdata/gpio/"
 compass = mag3110.compass()
