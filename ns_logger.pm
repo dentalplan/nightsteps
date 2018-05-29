@@ -3,6 +3,7 @@ package ns_logger{
     use warnings;
     use ns_telemetry;
     use ns_gpio;
+#    use Time::Piece qw(datetime);    
 
     sub new{
         my $class = shift;
@@ -27,7 +28,8 @@ package ns_logger{
         my $this = shift;
         my $rhGPS = $this->{_loop}->{_telem}->readGPS;
         my $compass = $this->{_loop}->{_telem}->compass;
-        my $time = $this->{_loop}->{_t}->datetime;
+#        my $time = $this->{_loop}->{_t}->datetime;
+        my $time = localtime;
         my $raSensor = $this->{_sensAnalogue}->readAllOfMyMode;
         open LOG, ">>$this->{_logfile}" or die $!;
         print LOG "$time,";
