@@ -39,7 +39,7 @@ package ns_logger{
         print LOG "$compass,";
         foreach my $s (@{$raSensor}){
             print LOG "$s,";
-            print "putting $s in record\n";
+#            print "putting $s in record\n";
         }
         print LOG "\n";
         close LOG;

@@ -53,7 +53,7 @@ package ns_gpio{
                 $out = $1;
 			}
         }   
-        print "sensor $channel: $out\n";
+#        print "sensor $channel: $out\n";
         return $out;
     }
 

@@ -129,7 +129,7 @@ package ns_loopit{
         }
     }
 
-    ######  generic LRDB    ##############################################################
+    ######  generic LRDB    #######################################
     sub LRDBprepPlaces{ 
         my ($this, $rh_loc, $DLen, $condition) = @_;
         my $distmet = 20;
