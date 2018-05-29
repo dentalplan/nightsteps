@@ -18,7 +18,7 @@ package ns_logger{
         }
         $this->{_logfile} = $fname;
         open LOG, ">>$this->{_logfile}" or die $!;
-        print LOG '"time","gpstime","lon","lat","compass","a0","a1","a2","a3","a4","a5","a6","a7",' . "\n";
+        print LOG '"time","gpstime","lat","lon","compass","a0","a1","a2","a3","a4","a5","a6","a7",' . "\n";
         close LOG;
         bless $this, $class;
         return $this; 
@@ -27,19 +27,16 @@ package ns_logger{
     sub logSensorData{
         my $this = shift;
         my $rhGPS = $this->{_loop}->{_telem}->readGPS;
-#        my $compass = $this->{_loop}->{_telem}->compass;
-        my $compass = "";
 #        my $time = $this->{_loop}->{_t}->datetime;
         my $time = localtime;
         my $raSensor = $this->{_sensAnalogue}->readAllOfMyMode;
         open LOG, ">>$this->{_logfile}" or die $!;
         print LOG "$time,";
         if ($rhGPS->{success} == 1){
-            print LOG "$rhGPS->{time},$rhGPS->{lon},$rhGPS->{lat},";
+            print LOG "$rhGPS->{time},$rhGPS->{lat},$rhGPS->{lon},$rh->GPS{course},";
         }else{
-            print LOG ",,,";
+            print LOG ",,,,";
         }
-        print LOG "$compass,";
         foreach my $s (@{$raSensor}){
             print LOG "$s,";
 #            print "putting $s in record\n";
