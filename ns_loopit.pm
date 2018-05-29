@@ -170,7 +170,7 @@ package ns_loopit{
     sub dataLoggerIt{
         my $this = shift;
         $this->{_logger}->logSensorData;
-        usleep(100);
+        usleep(1);
     }
 }
 1;
