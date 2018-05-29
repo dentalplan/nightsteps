@@ -13,15 +13,15 @@ path = "/home/pi/nsdata/gpio/"
 
 while True:
 
-	# Set up output files
-	for i in range(0,8):
-		file.append(open(path + str(i) + ".a", "w"))
+    # Set up output files
+    for i in range(0,8):
+        file.append(open(path + str(i) + ".a", "w"))
 
-	for c in range(0,10000):
-		for i in range(0,8):
-			a = mcp.read_adc(i)
-			value = '{num:04d}'.format(num=a)
-			file[i].write(str(value) + "\n")
+    for c in range(0,10000):
+        for i in range(0,8):
+            a = mcp.read_adc(i)
+            value = '{num:04d}'.format(num=a)
+            file[i].write(str(value) + "\n")
             time.sleep(0.01)
 
 
