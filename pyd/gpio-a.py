@@ -21,10 +21,10 @@ while True:
         for i in range(0,8):
             a[i] = mcp.read_adc(i)
             value = '{num:04d}'.format(num=a[i])
-            filelist[i].write(str(value) + "\n")
+            print >> filelist[i], str(value)
             time.sleep(0.02)
 
     for i in range(0,8):
         filelist[i] = open(path + str(i) + ".a", "w")
         value = '{num:04d}'.format(num=a[i])
-        filelist[i].write(str(value) + "\n")
+        print >> filelist[i], str(value)
