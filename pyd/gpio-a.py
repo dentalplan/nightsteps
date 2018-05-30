@@ -1,4 +1,5 @@
 import time
+import os
 # Import SPI library (for hardware SPI) and MCP3008 library.
 import Adafruit_GPIO.SPI as SPI
 import Adafruit_MCP3008
@@ -12,7 +13,9 @@ filelist = []
 a = [0,0,0,0,0,0,0,0]
 path = "/home/pi/nsdata/gpio/"
 for i in range(0,8):
-    filelist.append(open(path + str(i) + ".a", "w"))
+    filelist.append(open(path + str(i) + ".a", "a"))
+    value = '{num:04d}'.format(num=a[i])
+    print >> filelist[i], str(value)
 
 while True:
 
@@ -27,6 +30,8 @@ while True:
             print "written " + str(value) + " to " + str(i) + ".a at " + localtime
 
     for i in range(0,8):
-        filelist[i] = open(path + str(i) + ".a", "w")
+        filelist[i].close()
+        open(path + str(i) + ".a", "w").close()
+        filelist[i] = open(path + str(i) + ".a", "a")
         value = '{num:04d}'.format(num=a[i])
         print >> filelist[i], str(value)
