@@ -22,7 +22,9 @@ while True:
             a[i] = mcp.read_adc(i)
             value = '{num:04d}'.format(num=a[i])
             print >> filelist[i], str(value)
-            time.sleep(0.05)
+            time.sleep(0.03)
+            localtime = time.localtime(time.time())
+            print "written " + str(value) + " to file at " + localtime
 
     for i in range(0,8):
         filelist[i] = open(path + str(i) + ".a", "w")
