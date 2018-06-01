@@ -16,3 +16,4 @@ while True:
             print "Error getting compass"
         print >> f, str(c) 
         time.sleep(0.01)
+    f.close()
