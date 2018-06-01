@@ -83,7 +83,7 @@ package ns_gpio{
                 $out = $1;
 			}
         }   
-        print "compass:  $out\n";
+#        print "compass:  $out\n";
         return $out;
 
     }
