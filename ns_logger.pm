@@ -29,7 +29,7 @@ package ns_logger{
         my $rhGPS = $this->{_loop}->{_telem}->readGPS;
 #        my $time = $this->{_loop}->{_t}->datetime;
         my $time = localtime;
-        my $raSensor = $this->{_sensAnalogue}->readAllOfMyMode;
+        my $raSensor = $this->{_sensAnalogue}->readAllAnalogue;
         open LOG, ">>$this->{_logfile}" or die $!;
         print LOG "$time,";
         if ($rhGPS->{success} == 1){

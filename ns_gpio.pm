@@ -31,28 +31,42 @@ package ns_gpio{
         return $out;
     }
 
-	sub readAllOfMyMode{
-        my $this = shift;
-        my @val;
-        for (my $i=0; $i<8; $i++){
-            my $read = $this->readAnalogue($i);
-            push @val, $read;
+    sub readAllAnalogue{
+        my ($this) = @_;
+        open SENSOUT, "<$this->{_datapath}a.a" or die $!;
+        my @sens = <SENSOUT>;
+        my $size = @sens;
+        my @out;
+        for(my $i=$size-1; $i>0 && @out < 1; $i--){
+            chomp $sens[$i];
+            if ($sens[$i] =~ m/(\d\d\d\d)-(\d\d\d\d)-(\d\d\d\d)-(\d\d\d\d)-(\d\d\d\d)-(\d\d\d\d)-(\d\d\d\d)-(\d\d\d\d)-/){
+                push @out, $1;
+                push @out, $2;
+                push @out, $3;
+                push @out, $4;
+                push @out, $5;
+                push @out, $6;
+                push @out, $7;
+                push @out, $8;
+			}
         }
-        return \@val;
-	}
+        return \@out;
+    }
+
 
     sub readAnalogue{
         my ($this, $channel) = @_;
-        open SENSOUT, "<$this->{_datapath}$channel.$this->{_mode}" or die $!;
-        my @sens = <SENSOUT>;
-        my $size = @sens;
-        my $out = -1;
-        for(my $i=$size-1; $i>0 && $out == -1; $i--){
-            chomp $sens[$i];
-            if ($sens[$i] =~ m/(\d\d\d\d)/){
-                $out = $1;
-			}
-        }   
+        my $rh_out = $this->readAlLAnalogue;
+        my $out = $rh_out->[$channel];
+#        my @sens = <SENSOUT>;
+#        my $size = @sens;
+#        my $out = -1;
+#        for(my $i=$size-1; $i>0 && $out == -1; $i--){
+#            chomp $sens[$i];
+#            if ($sens[$i] =~ m/(\d\d\d\d)/){
+#                $out = $1;
+#			}
+#        }   
 #        print "sensor $channel: $out\n";
         return $out;
     }
