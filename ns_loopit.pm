@@ -1,3 +1,17 @@
+####################################################################
+# This is the central logic hub of nightsteps, where each possible #
+# process it can run lives, as used by nightsteps_run. It gives a  #
+# subroutine for a single iteration of the logic, before returning #
+# to nightsteps_run to see if the user has switched                #
+####################################################################
+# Logics                                                           #
+# · LRDBespeak1     Reads out house sale data from the Land        #
+#                   Registry database                              #
+#                                                                  #
+# - LRDBchuck1      Produces chuck sonification of Land Registry   #
+#                   house sale data and outputs via sound card     #
+#                                                                  #
+#    
 package ns_loopit{
     use strict;
     use warnings;
@@ -23,6 +37,7 @@ package ns_loopit{
             _telem => ns_telemetry->new,
             _aud => ns_audinterface->new,
             _db => ns_dbinterface->new,
+            _dbfilepath => '/home/pi/nsdata/',
             _t => Time::Piece->new,      
         };
         bless $this, $class;
@@ -55,7 +70,7 @@ package ns_loopit{
         my $this = shift;
         $this->{_it} = 1996;
         $this->{_yardstick} = $this->{_t}->year;
-        $this->{_db}->connectDB('lrdb.sqlite');
+        $this->{_db}->connectDB($this->{_dbfilepath} . 'lrdb.sqlite', 'SQLite');
     }
 
     sub LRDBespeak1It{
@@ -83,7 +98,7 @@ package ns_loopit{
     ### chuck 1     ########################################
     sub LRDBchuck1Setup{
         my $this = shift;
-        $this->{_db}->connectDB('lrdb.sqlite');
+        $this->{_db}->connectDB($this->{_dbfilepath} . 'lrdb.sqlite', 'SQLite');
         $this->{_sens} = ns_gpio->new('a', 7);
         $this->{_aud}->{_minyear} = 1996;
         $this->{_aud}->{_maxyear} = $this->{_t}->year;
@@ -170,7 +185,7 @@ package ns_loopit{
     sub dataLoggerIt{
         my $this = shift;
         $this->{_logger}->logSensorData;
-        usleep(1);
+        usleep(3);
     }
 }
 1;

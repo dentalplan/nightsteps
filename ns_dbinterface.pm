@@ -16,9 +16,8 @@ package ns_dbinterface;
 	sub connectDB {
 		my $this = shift;
 		my $database = shift;
-		my $driver = "SQLite"; 
-		my $path = "/home/pi/nsdata/";
-		my $dsn = "DBI:$driver:dbname=$path$database";
+		my $driver = shift; 
+		my $dsn = "DBI:$driver:dbname=$database";
 		my $userid = "";
 		my $password = "";
 		$this->{dbh} = DBI->connect($dsn, $userid, $password, { RaiseError => 1 }) 
