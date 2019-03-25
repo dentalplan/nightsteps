@@ -34,4 +34,13 @@ then
     perl /home/pi/nightsteps/nightsteps_run.pl>nslog.txt &
 fi
 
+ck5=$(ps aux | grep /home/pi/nightsteps/pyd/sol.py | grep -v grep | wc -l)
+echo $ck5
+if [ $ck5 -eq 0 ]
+then
+    echo 'init nightsteps'
+    python /home/pi/nightsteps/pyd/sol.py &
+    perl /home/pi/nightsteps/exp/binar.pl &
+fi
+
 echo "all done"

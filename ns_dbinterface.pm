@@ -17,9 +17,18 @@ package ns_dbinterface;
 		my $this = shift;
 		my $database = shift;
 		my $driver = shift; 
-		my $dsn = "DBI:$driver:dbname=$database";
-		my $userid = "";
-		my $password = "";
+        my $dsn;
+		my $userid;
+		my $password;
+        if ($driver eq "SQLite"){
+          $dsn = "DBI:$driver:dbname=$database";
+          $userid = "";
+          $password = "";
+        } elsif ($driver eq "Pg"){
+          $dsn = "DBI:$driver:dbname=$database;host=localhost;port=5432";
+          $userid = "pi";
+          $password = "3Oki24tpoppyli6";
+        }
 		$this->{dbh} = DBI->connect($dsn, $userid, $password, { RaiseError => 1 }) 
 			      or die $DBI::errstr;
 #		return "ERROR: MSQL:\n Did not connect to (SQLITE){DB}: Maybe sqlite is not setup " unless defined $This->{Dbh};

@@ -56,7 +56,7 @@ package ns_gpio{
 
     sub readAnalogue{
         my ($this, $channel) = @_;
-        my $rh_out = $this->readAlLAnalogue;
+        my $rh_out = $this->readAllAnalogue;
         my $out = $rh_out->[$channel];
 #        my @sens = <SENSOUT>;
 #        my $size = @sens;

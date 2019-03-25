@@ -191,6 +191,36 @@ package ns_loopit{
     ######################################################
     ### LDDB Block  ######################################
 
+    sub LDDBprepPlaces{ 
+        my ($this, $rh_loc, $DLen, $condition) = @_;
+        my $distmet = 20;
+        my $distlon = $distmet/$DLen->{lon};
+        my $distlat = $distmet/$DLen->{lat};
+        my %lon = (min=>$rh_loc->{lon} - $distlon, max=>$rh_loc->{lon} +$distlon) ;
+        my %lat = (min=>$rh_loc->{lat} - $distlat, max=>$rh_loc->{lat} +$distlat) ;
+        my @field = ("tblCoord.ID", "PAON", "SAON", "Street", "Lon", "Lat", "Price", "DateOfTransfer");
+        my $from = "(tblTransaction INNER JOIN tblAddress ON tblTransaction.AddressID=tblAddress.ID) INNER JOIN tblCoord ON tblAddress.ID=tblCoord.AddressID";
+        my $where =  " WHERE (lon BETWEEN $lon{min} AND $lon{max}) AND " .
+                     "(lat BETWEEN $lat{min} AND $lat{max}) AND " .
+                     $condition .
+                     "tblCoord.Type = \"location\"";
+        my $orderby = " ORDER BY DateOfTransfer ";
+        my %sqlhash = ( fields=>\@field,
+                    table=>$from,
+                    where=>$where,
+                    orderby=>$orderby);
+        my $rah = $this->{_db}->runSqlHash_rtnAoHRef(\%sqlhash);
+        return $rah;
+    }
     
+    sub LDDBsetup{
+        my $this = shift;
+        $this->{_db}->connectDB($this->{_dbfilepath} . 'lrdb.sqlite', 'SQLite');
+        $this->{_sens1} = ns_gpio->new('a', 7);
+        $this->{_aud}->{_minyear} = 1996;
+        $this->{_aud}->{_maxyear} = $this->{_t}->year;
+        $this->{_aud}->{_maxdist} = 45;
+        $this->{_aud}->{_pricediv} = 100;
+    }
 }
 1;
