@@ -4,9 +4,21 @@ import time
 import re
 from collections import deque
 
+#########################################################################
+# instruction | behaviour                                               #
+#-------------|---------------------------------------------------------#
+#  l          | Set output to low for number of miliseconds (e.g l500)  #
+#  h          | Set output to high for number of miliseconds (e.g. h200)#
+#  q          | Append following instructions to end of queue           #
+#  t          | Reset the queue, and go straight to the new instructions#
+#  i          | Add following instructions to beginning of queue        #
+#-----------------------------------------------------------------------#
+#########################################################################
 sol = [DigitalOutputDevice(5), DigitalOutputDevice(6)]
 state = [0,0]
-filepath = ["/home/pi/nsdata/gpio/sol-l.o", "/home/pi/nsdata/gpio/sol-r.o"]
+#look in the following files for instructions
+filepath = ["/home/pi/nsdata/gpio/dig1.o", "/home/pi/nsdata/gpio/dig2.o"]
+#make two double ended queues for instructions
 instruction = [deque(['s']), deque(['s'])]
 for instr in instruction:
     instr.clear()
@@ -37,6 +49,7 @@ def processInstr(newInstr, instr):
             instr.appendleft(ni)            
     return instr
 
+##main loop
 while True:
 
     for i in range(0,len(instruction)):
