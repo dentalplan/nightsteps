@@ -10,6 +10,7 @@ package ns_audinterface{
         my $this  = {
             _mode => shift,
             _testtools => ns_testtools->new,
+            _gpoutpath => '/home/pi/nsdata/gpio/'
         };
         bless $this, $class;
         return $this;
@@ -68,6 +69,43 @@ package ns_audinterface{
         $ck->waitTone;
     }
 
+    sub physSendInstructions{
+        my ($this, $file, $ra_instr) = @_;
+        open (FO, ">", $file);
+        foreach my $l (@{$ra_instr}){
+            print FO "$l\n";
+        }
+        close FO;
+    }
+
+    sub digBeat{
+        my ($this, $out, $mode, $rep, $style) = @_;
+        my $file = $this->{_gpoutpath} . "dig$out.o";
+        my @instr = ($mode);
+        my ($l, $h, $r);
+        if ($style eq "a"){
+            $l = "l30";
+            $h = "h40";
+            $r = 3;
+        }elsif ($style eq "b"){
+            $l = "l30";
+            $h = "h60";
+            $r = 2;
+        }
+        for (my $i=0; $i < $rep; $i++){
+            push @instr, "l150"; 
+            for (my $k=0; $k < $r; $k++){
+            push @instr, $h;
+            push @instr, $l;
+            }
+        }
+        push @instr, "l900";
+        $this->physSendInstructions($file, \@instr);
+    }
+
+    sub digWaitOnGPS{
+         
+    }
 
 }
 1;
