@@ -63,6 +63,19 @@ package ns_audinterface{
         $ck->basicOut(\@rah_so);
     }
 
+    sub LDDBpercussBasic1{
+        my $this = shift;
+        my $out = 1;
+        my $file = $this->{_gpoutpath} . "dig$out.o";
+        my $rah_do = shift; # pos, dist, price, year, hasSAON
+        my @clicks = ();
+        foreach my $rh_do (@{$rah_do}){
+            my $click = int(($rh_do->{dist} / $this->{_maxdist}) * 40);
+            push @clicks, $click;
+        }
+        $this->digClicks($file, \@clicks);
+    }
+
     sub chuckWaitOnGPS{
         my $this = shift;
         my $ck = ns_chuckout->new;
@@ -76,6 +89,25 @@ package ns_audinterface{
             print FO "$l\n";
         }
         close FO;
+    }
+
+    sub digClicks{
+        my ($this, $file, $ra_clicks) = @_; #strength, 
+        my $mode = 't';
+        my $size = @{$ra_clicks};
+        my @lines = ($mode);
+        for (my $i=0; $i<$size; $i++){
+            my $h = 15 + $ra_clicks->[$i];
+            my $l = 55 - $ra_clicks->[$i];
+            my $rep = 3;
+            for (my $r=0; $r<$rep;$r++){
+                push @lines, "h$h";
+                push @lines, "l$l";
+            }
+            push @lines, "l400";
+        }
+        push @lines, "l500";
+        $this->physSendInstructions($file, \@lines);
     }
 
     sub digBeat{

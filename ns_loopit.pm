@@ -51,6 +51,7 @@ package ns_loopit{
         switch ($this->{_logic}){
             case "LRDBespeak1"{ $this->LRDBespeak1Setup}
             case "LRDBchuck1"{ $this->LRDBchuck1Setup}
+            case "LDDBpercuss1"{ $this->LDDBpercussSetup}
         }
     }
 
@@ -59,6 +60,8 @@ package ns_loopit{
         switch ($this->{_logic}){
             case "LRDBespeak1" { $this->LRDBespeak1It }
             case "LRDBchuck1"{ $this->LRDBchuck1It}
+            case "LDDBpercuss1"{ $this->LDDBpercussIt}
+            case "LDDBpercussDemo"{ $this->LDDBpercussDemoIt}
             case "dataLogger" { $this->dataLoggerIt }
         }
     }
@@ -191,6 +194,63 @@ package ns_loopit{
     ######################################################
     ### LDDB Block  ######################################
 
+    sub LDDBpercussSetup{
+        my $this = shift;
+        $this->{_db}->connectDB("ldd", 'Pg');
+        $this->{_slidemin} = ns_gpio->new('a', 6);
+        $this->{_slidemax} = ns_gpio->new('a', 4);
+        $this->{_aud}->{_minyear} = 2008;
+        $this->{_aud}->{_maxyear} = $this->{_t}->year;
+        $this->{_aud}->{_maxdist} = 45;
+    }
+
+    sub LDDBpercussDemoIt{
+        my $this = shift;
+        my @fn = ("digtest1.o", "digtest2.o", "digtest3.o", "digtestPause.o");
+        my $beats = int(rand(4));
+        my $size = @fn;
+        for(my $i=0; $i<$beats+1; $i++){
+            my $f = int(rand($size));
+            system "cp /home/pi/nsdata/gpio/$fn[$f] /home/pi/nsdata/gpio/dig1.o";
+        }
+        sleep($beats*2);
+    }
+
+    sub LDDBpercussIt{
+    # Needs heavy editing!
+        my $this = shift;
+        my $rh_loc = $this->{_telem}->readGPS;
+        if ($rh_loc->{success} == 1){
+            print "GPS success!\n";
+            my $DLen = $this->{_telem}->getDegreeToMetre($rh_loc);
+            my $polyco = $this->{_telem}->prepPolyCo($rh_loc, $this->{_listenshape});
+            my $condition = "";
+            my $rah_places = $this->LDDBprepPlaces($rh_loc, $DLen, $condition);
+            if ($rah_places){
+                my @do;
+                foreach my $rh_pl (@{$rah_places}){
+#                    print "$rh_pl->{SAON} $rh_pl->{PAON} $rh_pl->{Street}\n";
+                    if ($this->{_telem}->checkPointIsInShape($rh_pl, $polyco) == 1){
+                        my $l2 = {
+                                    lon => $rh_pl->{Lon},
+                                    lat => $rh_pl->{Lat},
+                        };  
+                        my $rh_do = {
+                                        dist => $this->{_telem}->getDistanceInMetres($rh_loc, $l2),
+                        };
+#                        print "price is $rh_pl->{Price} vs tune of $pricetune\n";
+                        push @do, $rh_do
+                    }
+                }
+#                $this->{_aud}->LRDBchuckBasic1(\@do, $pricetune);
+            }
+        }else{
+            $this->{_aud}->chuckWaitOnGPS;
+        }
+
+    }
+
+
     sub LDDBprepPlaces{ 
         my ($this, $rh_loc, $DLen, $condition) = @_;
         my $distmet = 20;
@@ -198,13 +258,12 @@ package ns_loopit{
         my $distlat = $distmet/$DLen->{lat};
         my %lon = (min=>$rh_loc->{lon} - $distlon, max=>$rh_loc->{lon} +$distlon) ;
         my %lat = (min=>$rh_loc->{lat} - $distlat, max=>$rh_loc->{lat} +$distlat) ;
-        my @field = ("tblCoord.ID", "PAON", "SAON", "Street", "Lon", "Lat", "Price", "DateOfTransfer");
-        my $from = "(tblTransaction INNER JOIN tblAddress ON tblTransaction.AddressID=tblAddress.ID) INNER JOIN tblCoord ON tblAddress.ID=tblCoord.AddressID";
+        my @field = ("lon", "lat", "completed_date", "permission_date", "permission_lapses_date");
+        my $from = "app_ldd.ld_permissions AS perm LEFT JOIN ca_permlatlon AS ll ON perm.permission_id=ll.permission_id";
         my $where =  " WHERE (lon BETWEEN $lon{min} AND $lon{max}) AND " .
-                     "(lat BETWEEN $lat{min} AND $lat{max}) AND " .
-                     $condition .
-                     "tblCoord.Type = \"location\"";
-        my $orderby = " ORDER BY DateOfTransfer ";
+                     "(lat BETWEEN $lat{min} AND $lat{max}) " . 
+                      $condition;
+        my $orderby = " ORDER BY completed_date ";
         my %sqlhash = ( fields=>\@field,
                     table=>$from,
                     where=>$where,
@@ -213,14 +272,5 @@ package ns_loopit{
         return $rah;
     }
     
-    sub LDDBsetup{
-        my $this = shift;
-        $this->{_db}->connectDB($this->{_dbfilepath} . 'lrdb.sqlite', 'SQLite');
-        $this->{_sens1} = ns_gpio->new('a', 7);
-        $this->{_aud}->{_minyear} = 1996;
-        $this->{_aud}->{_maxyear} = $this->{_t}->year;
-        $this->{_aud}->{_maxdist} = 45;
-        $this->{_aud}->{_pricediv} = 100;
-    }
 }
 1;
