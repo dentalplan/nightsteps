@@ -15,18 +15,14 @@ package ns_telemetry{
             _gpslog => 'gpsout.txt',
             _gpspath => '/home/pi/nsdata/',
             _compass => ns_gpio->new('c',0),
-#            _pypath => '/home/pi/nightsteps/',
+            _presPosition => {lat =>'', lon =>'', course=>'', time=>''},
+            _indicatorLED => ns_gpio->new('digOut',3),
+            _LEDwarnings => {gps=>['t','l100','h1000','l200','h1000','l1000']},
+            _LEDsuccess => {gps=>['t','l300','h100','l1200']}
         };
         bless $this, $class;
         return $this;
     }
-
-#    sub compass{
-#        my $this = shift;
-#        my @result = `python $this->{_pypath}$this->{_pycomp}`;
-#        chomp $result[1];
-#        return $result[1];
-#    }
 
     sub getDegreeToMetre{
         my $this = shift;
@@ -116,12 +112,16 @@ package ns_telemetry{
                 $loc{lon} = $3;
                 $loc{course} = $this->{_compass}->readValue;
 #                $loc{course} = $4;
-#                print "\n Lon: $loc{lon} Lat: $loc{lat} Course: $loc{course}\n";
+                print "\n Lon: $loc{lon} Lat: $loc{lat} Course: $loc{course}\n";
                 $loc{success} = 1;
+                $this->{_presPosition} = \%loc;
+                $this->{_indicatorLED}->writeInstructions($this->{_LEDsuccess}->{gps});
             }else{
                 $loc{success} = 0;
+                $this->{_indicatorLED}->writeInstructions($this->{_LEDwarnings}->{gps});
             }
         }
+        
         close GPSLOG;
 #        print "loc success is $loc{success}\n";
         return \%loc;

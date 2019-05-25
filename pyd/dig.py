@@ -15,13 +15,13 @@ from collections import deque
 #-----------------------------------------------------------------------#
 #########################################################################
 
-digOut = [DigitalOutputDevice(5), DigitalOutputDevice(6)]
-state = [0,0]
+digOut = [DigitalOutputDevice(5), DigitalOutputDevice(6), DigitalOutputDevice(17)]
+state = [0,0,0]
 #look in the following files for instructions
-filepath = ["/home/pi/nsdata/gpio/dig1.o", "/home/pi/nsdata/gpio/dig2.o"]
+filepath = ["/home/pi/nsdata/gpio/dig1.o", "/home/pi/nsdata/gpio/dig2.o", "/home/pi/nsdata/gpio/dig3.o"]
 #make two double ended queues for instructions, one for eeach of the digital outs
-queuedInstruction = [deque(['s']), deque(['s'])]
-activeInstruction = [deque(['s']), deque(['s'])]
+queuedInstruction = [deque(['s']), deque(['s']), deque(['s'])]
+activeInstruction = [deque(['s']), deque(['s']), deque(['s'])]
 for instr in activeInstruction:
     instr.clear()
 for instr in queuedInstruction:

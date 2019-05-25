@@ -33,8 +33,11 @@ package ns_loopit{
         my $this = {
             _listenshape => $rh->{listenshape},
             _logic => $rh->{logic},
+            _val => $rh->{val},
+            _version => $rh->{version},
             _testtools => ns_testtools->new,
             _telem => ns_telemetry->new,
+#            _gpio => ns_gpio->new,
             _aud => ns_audinterface->new,
             _db => ns_dbinterface->new,
             _dbfilepath => '/home/pi/nsdata/',
@@ -232,8 +235,8 @@ package ns_loopit{
 #                    print "$rh_pl->{SAON} $rh_pl->{PAON} $rh_pl->{Street}\n";
                     if ($this->{_telem}->checkPointIsInShape($rh_pl, $polyco) == 1){
                         my $l2 = {
-                                    lon => $rh_pl->{Lon},
-                                    lat => $rh_pl->{Lat},
+                                    lon => $rh_pl->{lon},
+                                    lat => $rh_pl->{lat},
                         };  
                         my $rh_do = {
                                         dist => $this->{_telem}->getDistanceInMetres($rh_loc, $l2),
@@ -242,14 +245,12 @@ package ns_loopit{
                         push @do, $rh_do
                     }
                 }
-#                $this->{_aud}->LRDBchuckBasic1(\@do, $pricetune);
+                $this->{_aud}->LDDBpercussBasic1(\@do);
             }
-        }else{
-            $this->{_aud}->chuckWaitOnGPS;
         }
+        
 
     }
-
 
     sub LDDBprepPlaces{ 
         my ($this, $rh_loc, $DLen, $condition) = @_;

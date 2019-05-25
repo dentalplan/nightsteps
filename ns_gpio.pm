@@ -10,6 +10,9 @@ package ns_gpio{
                     _channel => shift,
                     _datapath => '/home/pi/nsdata/gpio/',
                     };
+        if ($this->{_mode} eq 'a'){
+            $this->{_presReadings} = {'','','','','','','',''};
+        }
         bless $this, $class;
         $this->setupReading;
         return $this;
@@ -20,6 +23,23 @@ package ns_gpio{
 #        system "touch $this->{_datapath}$this->{_channel}.$this->{_mode}";
     }
 
+    sub writeInstructions{
+        my $this = shift;
+        my $ra_instr = shift;
+        my $prefix = "";
+        if ($this->{_mode} eq 'digOut'){
+            $prefix = "dig";
+        }elsif ($this->{_mode} eq 'pmwOut'){
+            $prefix = "pwm";
+        }
+        my $file = $this->{_datapath} . $prefix . $this->{_channel} . ".o";
+        open (FO, ">", $file);
+        foreach my $l (@{$ra_instr}){
+            print FO "$l\n";
+        }
+        close FO;
+    }
+
     sub readValue{
         my $this = shift;
         my $out;
@@ -27,6 +47,7 @@ package ns_gpio{
             case 'a' {$out = $this->readAnalogue($this->{_channel});}
             case 'd' {$out = $this->readDigital;}
             case 'c' {$out = $this->readCompass;}
+            case 'digOut' {print "Not readable";}
         }
         return $out;
     }
@@ -50,6 +71,7 @@ package ns_gpio{
                 push @out, $8;
 			}
         }
+        $this->{_presReadings} = \@out;
         return \@out;
     }
 
