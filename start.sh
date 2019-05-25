@@ -31,16 +31,25 @@ echo $ck2
 if [ $ck2 -eq 0 ]
 then
     echo 'init nightsteps'
-    perl /home/pi/nightsteps/nightsteps_run.pl>nslog.txt &
+    log=$(date +nslog-%y%m%d-%H%M.txt)
+    perl /home/pi/nightsteps/nightsteps_run.pl>/home/pi/nsdata/syslog/$log &
 fi
 
-ck5=$(ps aux | grep /home/pi/nightsteps/pyd/sol.py | grep -v grep | wc -l)
+ck5=$(ps aux | grep /home/pi/nightsteps/pyd/dig.py | grep -v grep | wc -l)
 echo $ck5
 if [ $ck5 -eq 0 ]
 then
-    echo 'init nightsteps'
-    python /home/pi/nightsteps/pyd/sol.py &
-    perl /home/pi/nightsteps/exp/binar.pl &
+    echo 'init dig out'
+    python /home/pi/nightsteps/pyd/dig.py &
+fi
+
+ck6=$(ps aux | grep /home/pi/nightsteps/pyd/pwm.py | grep -v grep | wc -l)
+echo $ck6
+if [ $ck6 -eq 0 ]
+then
+    echo 'init pmw'
+    python /home/pi/nightsteps/pyd/pwm.py &
 fi
 
 echo "all done"
+	
