@@ -18,7 +18,8 @@ package ns_telemetry{
             _presPosition => {lat =>'', lon =>'', course=>'', time=>''},
             _indicatorLED => ns_gpio->new('digOut',3),
             _LEDwarnings => {gps=>['t','l100','h1000','l200','h1000','l1000']},
-            _LEDsuccess => {gps=>['t','l300','h100','l1200']}
+            _LEDsuccess => {gps=>['t','l300','h100','l1200']},
+            _GPSchecks => 0
         };
         bless $this, $class;
         return $this;
@@ -86,7 +87,7 @@ package ns_telemetry{
         my ($this, $rh_pl, $polyco) = @_;
 #        print "test locale: " . $rh_pl->{Lon} . ", " . $rh_pl->{Lat} . "\n";
         my $rtn;
-        my @point = ($rh_pl->{Lon}, $rh_pl->{Lat});
+        my @point = ($rh_pl->{lon}, $rh_pl->{lat});
         if ($polyco->contains(\@point)){
             $rtn = 1;
         }else{
@@ -97,9 +98,11 @@ package ns_telemetry{
 
     sub readGPS{
         my $this = shift;
-        open GPSLOG, "<$this->{_gpspath}$this->{_gpslog}" or die $!;
+        my $file = "$this->{_gpspath}$this->{_gpslog}";
+        open GPSLOG, "<$file" or die $!;
         my @gps = <GPSLOG>;
         my $size = @gps;
+        my $selLine;
         my %loc = ();
         $loc{success} = 0;
     #   print $gps[-1];
@@ -107,6 +110,7 @@ package ns_telemetry{
             chomp $gps[$i];
 #            print $gps[$i];
             if($gps[$i] =~ m/.+ TPV, Time: (.+), Lat: (.+), Lon: (.+), Speed: .+, Heading: (.*)/){
+                $selLine = $gps[$i];
                 $loc{time} = $1;
                 $loc{lat} = $2;
                 $loc{lon} = $3;
@@ -121,8 +125,11 @@ package ns_telemetry{
                 $this->{_indicatorLED}->writeInstructions($this->{_LEDwarnings}->{gps});
             }
         }
-        
+        $this->{_checks}++;
         close GPSLOG;
+        if ($this->{_checks} > 300){
+            #behaviour if file size too large!
+        }
 #        print "loc success is $loc{success}\n";
         return \%loc;
     }

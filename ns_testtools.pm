@@ -27,4 +27,18 @@ package ns_testtools{
             print $keys[$i] . " = " . $rh_hash->{$keys[$i]} . "\n";
         }
     }
+
+    sub printRefArrayOfHashes{
+        my ($this, $rah) = @_;
+        my $size = @{$rah};
+        print "testtools: printing array\n";
+        for (my $i=0; $i<$size; $i++){
+            print "New line...\n";
+            my @keys = keys %{$rah->[$i]};
+            foreach my $k (@keys){
+                print $k . ": " . $rah->[$i]->{$k} . "\n";        
+            }
+        }
+    }
+
 }1;

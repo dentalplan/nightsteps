@@ -1,7 +1,7 @@
 ####################################################################
 # This is the central logic hub of nightsteps, where each possible #
 # process it can run lives, as used by nightsteps_run. It gives a  #
-# subroutine for a single iteration of the logic, before returning #
+# subroutinte for a single iteration of the logic, before returning#
 # to nightsteps_run to see if the user has switched                #
 ####################################################################
 # Logics                                                           #
@@ -32,6 +32,7 @@ package ns_loopit{
         my $rh = shift;
         my $this = {
             _listenshape => $rh->{listenshape},
+            _daterange => $rh->{daterange},
             _logic => $rh->{logic},
             _val => $rh->{val},
             _version => $rh->{version},
@@ -127,11 +128,11 @@ package ns_loopit{
                 my @do;
                 foreach my $rh_pl (@{$rah_places}){
 #                    print "$rh_pl->{SAON} $rh_pl->{PAON} $rh_pl->{Street}\n";
-                    if ($this->{_telem}->checkPointIsInShape($rh_pl, $polyco) == 1){
-                        my $l2 = {
-                                    lon => $rh_pl->{Lon},
-                                    lat => $rh_pl->{Lat},
-                        };  
+                    my $l2 = {
+                                lon => $rh_pl->{Lon},
+                                lat => $rh_pl->{Lat},
+                    };  
+                    if ($this->{_telem}->checkPointIsInShape($l2, $polyco) == 1){
                         my $rh_do = {
                                         pos => 0.5,
                                         dist => $this->{_telem}->getDistanceInMetres($rh_loc, $l2),
@@ -200,8 +201,8 @@ package ns_loopit{
     sub LDDBpercussSetup{
         my $this = shift;
         $this->{_db}->connectDB("ldd", 'Pg');
-        $this->{_slidemin} = ns_gpio->new('a', 6);
-        $this->{_slidemax} = ns_gpio->new('a', 4);
+#        $this->{_slidemin} = ns_gpio->new('a', 6);
+#        $this->{_slidemax} = ns_gpio->new('a', 4);
         $this->{_aud}->{_minyear} = 2008;
         $this->{_aud}->{_maxyear} = $this->{_t}->year;
         $this->{_aud}->{_maxdist} = 45;
@@ -227,7 +228,7 @@ package ns_loopit{
             print "GPS success!\n";
             my $DLen = $this->{_telem}->getDegreeToMetre($rh_loc);
             my $polyco = $this->{_telem}->prepPolyCo($rh_loc, $this->{_listenshape});
-            my $condition = "";
+            my $condition = $this->LDDBcreateDateCondition;
             my $rah_places = $this->LDDBprepPlaces($rh_loc, $DLen, $condition);
             if ($rah_places){
                 my @do;
@@ -248,8 +249,36 @@ package ns_loopit{
                 $this->{_aud}->LDDBpercussBasic1(\@do);
             }
         }
-        
+    }
 
+    sub LDDBcreateDateCondition{
+        my $this = shift; 
+        my $rh = $this->{_daterange}->readDateRange;
+        my $cond;
+        switch ($rh->{state}){
+            case (0){   $cond = " AND (status_rc = 'SUBMITTED' or status_rc = 'STARTED') "; }
+            case (3){   
+                        my $btmyear = $rh->{btm}->strftime('%Y-%m-%d');
+                        $cond = " AND (status_rc = 'SUBMITTED' OR status_rc = 'STARTED' OR (status_rc = 'COMPLETED' AND completed_date >= '$btmyear')) ";
+                    }
+            case (4){
+                        my $topyear = $rh->{top}->strftime('%Y-%m-%d');
+                        my $btmyear = $rh->{btm}->strftime('%Y-%m-%d');
+                        $cond = " AND (status_rc = 'COMPLETED' AND completed_date <= '$topyear' completed_date >= '$btmyear') ";
+                    }
+            case (6){
+                        my $topyear = $this->{_daterange}->{_drp}->{highDate};
+                        my $btmyear = $this->{_daterange}->{_drp}->{lowDate};
+                        $cond = " AND (status_rc = 'DELETED' OR status_rc = 'LAPSED' OR status_rc = 'STARTED' OR status_rc = 'SUBMITTED' OR " . 
+                                " (status_rc = 'COMPLETED' AND completed_date <= '$topyear' AND completed_date >= '$btmyear')) ";
+                    }
+            case (7){
+                        my $topyear = $rh->{top}->strftime('%Y-%m-%d');
+                        $cond = " AND (status_rc = 'DELETED' OR status_rc = 'LAPSED' OR (status_rc = 'COMPLETED' AND completed_date <= '$topyear')) ";
+                    }
+            case (8){   $cond = " AND (status_rc = 'DELETED' OR status_rc = 'LAPSED') "; }
+        }
+        return $cond;
     }
 
     sub LDDBprepPlaces{ 
@@ -270,6 +299,7 @@ package ns_loopit{
                     where=>$where,
                     orderby=>$orderby);
         my $rah = $this->{_db}->runSqlHash_rtnAoHRef(\%sqlhash);
+        #$this->{_testtools}->printRefArrayOfHashes($rah);
         return $rah;
     }
     

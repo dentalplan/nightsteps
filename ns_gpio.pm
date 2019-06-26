@@ -2,6 +2,7 @@ package ns_gpio{
     use strict;
     use warnings;
     use Switch;
+    use DateTime;
 
     sub new{
         my $class = shift;
@@ -14,9 +15,83 @@ package ns_gpio{
             $this->{_presReadings} = {'','','','','','','',''};
         }
         bless $this, $class;
-        $this->setupReading;
+#        $this->setupReading;
         return $this;
     }
+
+    sub newDateRange{
+        my $class = shift;
+        my $rh = shift;
+        my $this = {
+                    _mode => 'dr',  
+                    _datapath => '/home/pi/nsdata/gpio/',
+                    _drp => $rh
+                   };
+        bless $this, $class;
+        return $this;
+    }
+    
+    sub readDateRange{
+        my $this = shift;
+        my $ra_sens = $this->readAllAnalogue;
+        my $bp = $this->{_drp}->{btmPin};
+        my $tp = $this->{_drp}->{topPin};
+        my $br = $ra_sens->[$bp];
+        my $tr = $ra_sens->[$tp];
+        my $rtn = { btm => "error",
+                    top => "error",
+                    ba => -1,
+                    ta => -1 };
+        my $ra_vs = $this->{_drp}->{valScale};
+        my $size = @{$ra_vs};
+        for (my $i=0; $i<$size; $i++) {
+            if(($br >= $ra_vs->[$i]->{low}) && ($br <= $ra_vs->[$i]->{high})){
+                $rtn->{btm} = $ra_vs->[$i]->{range};
+                $rtn->{ba} = $i;
+            }
+            if(($tr >= $ra_vs->[$i]->{low}) && ($tr <= $ra_vs->[$i]->{high})){
+                $rtn->{top} = $ra_vs->[$i]->{range};
+                $rtn->{ta} = $i;
+            }
+        }
+        if ($rtn->{btm} eq 'dateRange'){
+            my $max = $ra_vs->[$rtn->{ba}]->{low};
+            my $min = $ra_vs->[$rtn->{ba}]->{high};
+            $rtn->{btm} = $this->convertValsToDates($min, $max, $br);       
+        }
+        if ($rtn->{top} eq 'dateRange'){
+            my $max = $ra_vs->[$rtn->{ta}]->{low};
+            my $min = $ra_vs->[$rtn->{ta}]->{high};
+            $rtn->{top} = $this->convertValsToDates($min, $max, $tr);       
+        }
+        $rtn->{state} =  $rtn->{ta} + ($rtn->{ba} * 3); #this creates a unique 0-6 scale for each state, though states 2 and 5 are impossible
+                                                        #due to physical constraint
+        return $rtn;
+    }
+
+    sub convertValsToDates{
+        my ($this, $oldMin, $oldMax, $oldValue) = @_;
+        my $ld = $this->{_drp}->{lowDate};
+        my $newMin = 0;
+        my $newMax = $this->getDifferenceBetweenDates($ld, $this->{_drp}->{highDate}); 
+        my $oldRange = ($oldMax - $oldMin);  
+        my $newRange = ($newMax - $newMin); 
+        my $newValue = ((($oldValue - $oldMin) * $newRange) / $oldRange) + $newMin;
+        my $newDate = DateTime->new(year => $ld->year, month => $ld->month, day => $ld->day);
+        $newDate->add(days => int($newValue)); 
+        print "low date is now $this->{_drp}->{lowDate}\n";
+        return $newDate;
+#        return $newDate;
+    }
+
+    sub getDifferenceBetweenDates{
+        my ($his, $d1, $d2) = @_;
+        my $dur = ($d1 > $d2 ? ($d1->subtract_datetime_absolute($d2)) :
+                               ($d2->subtract_datetime_absolute($d1)));
+        my $days = $d1->delta_days($d2)->delta_days;
+        return $days;
+    }
+
 
     sub setupReading{
         my $this = shift;
@@ -53,7 +128,7 @@ package ns_gpio{
     }
 
     sub readAllAnalogue{
-        my ($this) = @_;
+        my $this = shift;
         open SENSOUT, "<$this->{_datapath}a.a" or die $!;
         my @sens = <SENSOUT>;
         my $size = @sens;
