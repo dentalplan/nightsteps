@@ -6,6 +6,7 @@ package ns_telemetry{
     use Math::Polygon;
     use Math::Polygon::Calc;
     use GIS::Distance;
+    use Math::Clipper;
     use Math::Trig;
 
     sub new{
@@ -61,13 +62,13 @@ package ns_telemetry{
         my $poly = Math::Polygon->new(@{$ra_shape});
         my $spun = $poly->rotate(centre=>[0,0], degrees=>$rh_loc->{course});
         my $polyco = $this->convertPolyCoord($spun, $rh_loc, $DLen);
-
+        return $polyco;
     }
 
     sub convertPolyCoord{
         my ($this, $poly, $l, $DLen) = @_; 
     #    print "\nchecking incoming from spun\n";
-        $this->printPolyPoints($poly);
+#        $this->printPolyPoints($poly);
         my @points = $poly->points;
         my @coord = (); 
         foreach my $p(@points){
@@ -75,7 +76,7 @@ package ns_telemetry{
             my $lon = ($p->[0]/$DLen->{lon}) + $l->{lon};
             my $rlon = sprintf("%.8f", $lon);
             my $rlat = sprintf("%.7f", $lat);
-            print "\n coord point: $rlon,$rlat\n";
+#            print "\n coord point: $rlon,$rlat\n";
             push @coord, [$rlon, $rlat];
         }   
         my $rtn = Math::Polygon->new(@coord);
@@ -94,6 +95,10 @@ package ns_telemetry{
             $rtn = 0;
         }
         return $rtn;
+    }
+
+    sub checkShapesOverlap{
+      my ($this, $poly1, $poly2) = @_;
     }
 
     sub readGPS{

@@ -9,15 +9,17 @@ use Time::HiRes qw( usleep);
 #set up modules
 
 #set up variables
-my @listenshape = ([-6,-6], [-15,40], [15,40], [6,-6], [-6,-6]);
-my $maxdist = 45;
+#my @listenshape = ([-6,-6], [-15,40], [15,40], [6,-6], [-6,-6]);
+#my $maxdist = 45;
+my @listenshape = ([-6,-6], [-30,75], [-10,80], [10, 80], [30,75], [6,-6], [-6,-6]);
+my $maxdist = 85;
 my $switch1 = ns_gpio->new('a', 7);
 my @switchbands = (
     {low=>60, high=>95, logic=>'LDDBpercussDemo', version=>'main', val=>''},
-    {low=>135, high=>165, logic=>'dataLogger', version=>'main', val=>''},
-    {low=>250, high=>280, logic=>'LDDBpercuss1', version=>'textsearch', val=>'demolition'},
-    {low=>410, high=>450, logic=>'LDDBpercuss1', version=>'shi', val=>'<-1'},
-    {low=>590, high=>635, logic=>'LDDBpercuss1', version=>'osi', val=>'>+1'},
+    {low=>135, high=>165, logic=>'LDDBpercuss1', version=>'osi', val=>'<= -1'},
+    {low=>250, high=>280, logic=>'LDDBpercuss1', version=>'osi', val=>'>= 1'},
+    {low=>410, high=>450, logic=>'LDDBpercuss1', version=>'shi', val=>'<= -1'},
+    {low=>590, high=>635, logic=>'LDDBpercuss1', version=>'shi', val=>'>= 1'},
     {low=>950, high=>1024, logic=>'LDDBpercuss1', version=>'all', val=>''},
     );
 my @dateScale = (

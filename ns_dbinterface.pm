@@ -168,11 +168,28 @@ package ns_dbinterface;
 		) = @_;
 		my ($r_bunch, @row);
 		my $fields = $this->unpackFields_rtnStr($r_barrel->{fields});
+    my @keyfields;
+    foreach my $f (@{$r_barrel->{fields}}){
+        if($f =~ m/(.+) AS (.*)/){
+            my $as = $2;
+            chomp $as;
+            push @keyfields, $as;
+        }else{
+            push @keyfields, $f;
+        }
+    }
+    my $gbsize = @{$r_barrel->{groupbys}};
+    my $groupby = "";
+    if ($gbsize > 0){
+        $groupby = " GROUP BY " . $this->unpackFields_rtnStr($r_barrel->{groupbys});
+    }
 		my $sql = "SELECT " . $fields . 
 			  " FROM " . $r_barrel->{table} .
 			  $r_barrel->{where} .
+              $groupby . 
+              $r_barrel->{having} . 
 			  $r_barrel->{orderby} . ";";
-#        print "$sql\n";
+        print "$sql\n";
 		my $query = $this->{dbh}->prepare($sql);
                 $query->execute;		
 		my $num_fields = @{$r_barrel->{fields}};

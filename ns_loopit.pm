@@ -21,11 +21,10 @@ package ns_loopit{
     use ns_audinterface;
     use ns_gpio;
     use ns_logger;
-    use Math::Polygon;
-    use Math::Polygon::Calc;
+#    use Math::Polygon;
+#    use Math::Polygon::Calc;
     use Switch;
     use Time::Piece;
-    use Time::HiRes qw( usleep );
 
     sub new{
         my $class = shift;
@@ -36,6 +35,7 @@ package ns_loopit{
             _logic => $rh->{logic},
             _val => $rh->{val},
             _version => $rh->{version},
+            _maxdist => $rh->{maxdist},
             _testtools => ns_testtools->new,
             _telem => ns_telemetry->new,
 #            _gpio => ns_gpio->new,
@@ -53,8 +53,6 @@ package ns_loopit{
     sub loopitSetup{
         my $this = shift;
         switch ($this->{_logic}){
-            case "LRDBespeak1"{ $this->LRDBespeak1Setup}
-            case "LRDBchuck1"{ $this->LRDBchuck1Setup}
             case "LDDBpercuss1"{ $this->LDDBpercussSetup}
         }
     }
@@ -62,137 +60,19 @@ package ns_loopit{
     sub iterate{
         my $this = shift;
         switch ($this->{_logic}){
-            case "LRDBespeak1" { $this->LRDBespeak1It }
-            case "LRDBchuck1"{ $this->LRDBchuck1It}
             case "LDDBpercuss1"{ $this->LDDBpercussIt}
             case "LDDBpercussDemo"{ $this->LDDBpercussDemoIt}
             case "dataLogger" { $this->dataLoggerIt }
         }
     }
 
-    ######################################################
-    ### LRDB Block  ######################################
-    ### espeak 1    ######################################
-    sub LRDBespeak1Setup{
-        my $this = shift;
-        $this->{_it} = 1996;
-        $this->{_yardstick} = $this->{_t}->year;
-        $this->{_db}->connectDB($this->{_dbfilepath} . 'lrdb.sqlite', 'SQLite');
-    }
-
-    sub LRDBespeak1It{
-        my $this = shift;
-        if ($this->{_it} > $this->{_yardstick}){ $this->{_it}=1996; }
-        print "Looking for year $this->{_it}\n";
-        my $rh_loc = $this->{_telem}->readGPS;
-        if ($rh_loc->{success} == 1){
-            print "GPS success!\n";
-            my $DLen = $this->{_telem}->getDegreeToMetre($rh_loc);
-            my $polyco = $this->{_telem}->prepPolyCo($rh_loc, $this->{_listenshape});
-            my $condition = "DateOfTransfer Like \"$this->{_it}%\" AND ";
-            my $rah_places = $this->LRDBprepPlaces($rh_loc, $DLen, $condition);
-            if ($rah_places){
-                foreach my $rh_pl (@{$rah_places}){
-                    if ($this->{_telem}->checkPointIsInShape($rh_pl, $polyco) == 1){
-                        $this->{_aud}->LRDBespeak1($rh_pl);
-                    }
-                }
-            }
-        }elsif($this->{_it}==1996){$this->{_aud}->espeakWaitOnGPS;}
-        $this->{_it}++;
-    }
-
-    ### chuck 1     ########################################
-    sub LRDBchuck1Setup{
-        my $this = shift;
-        $this->{_db}->connectDB($this->{_dbfilepath} . 'lrdb.sqlite', 'SQLite');
-        $this->{_sens} = ns_gpio->new('a', 7);
-        $this->{_aud}->{_minyear} = 1996;
-        $this->{_aud}->{_maxyear} = $this->{_t}->year;
-        $this->{_aud}->{_maxdist} = 45;
-        $this->{_aud}->{_pricediv} = 100;
-    }
-    
-    sub LRDBchuck1It{
-        my $this = shift;
-        my $rh_loc = $this->{_telem}->readGPS;
-        if ($rh_loc->{success} == 1){
-            print "GPS success!\n";
-            my $DLen = $this->{_telem}->getDegreeToMetre($rh_loc);
-            my $polyco = $this->{_telem}->prepPolyCo($rh_loc, $this->{_listenshape});
-            my $condition = "";
-            my $rah_places = $this->LRDBprepPlaces($rh_loc, $DLen, $condition);
-            if ($rah_places){
-#                my $pricetune = $this->LRDBaveragePrice($rah_places);
-                my $pricetune = $this->{_sens}->readValue * 1953;
-                my @do;
-                foreach my $rh_pl (@{$rah_places}){
-#                    print "$rh_pl->{SAON} $rh_pl->{PAON} $rh_pl->{Street}\n";
-                    my $l2 = {
-                                lon => $rh_pl->{Lon},
-                                lat => $rh_pl->{Lat},
-                    };  
-                    if ($this->{_telem}->checkPointIsInShape($l2, $polyco) == 1){
-                        my $rh_do = {
-                                        pos => 0.5,
-                                        dist => $this->{_telem}->getDistanceInMetres($rh_loc, $l2),
-                                        price => $rh_pl->{Price},
-                                        year => int(substr($rh_pl->{DateOfTransfer},0,4)),
-                                        SAON => $rh_pl->{SAON},
-                        };
-                        print "price is $rh_pl->{Price} vs tune of $pricetune\n";
-                        push @do, $rh_do
-                    }
-                }
-                $this->{_aud}->LRDBchuckBasic1(\@do, $pricetune);
-            }
-        }else{
-            $this->{_aud}->chuckWaitOnGPS;
-        }
-    }
-
-    ######  generic LRDB    #######################################
-    sub LRDBprepPlaces{ 
-        my ($this, $rh_loc, $DLen, $condition) = @_;
-        my $distmet = 20;
-        my $distlon = $distmet/$DLen->{lon};
-        my $distlat = $distmet/$DLen->{lat};
-        my %lon = (min=>$rh_loc->{lon} - $distlon, max=>$rh_loc->{lon} +$distlon) ;
-        my %lat = (min=>$rh_loc->{lat} - $distlat, max=>$rh_loc->{lat} +$distlat) ;
-        my @field = ("tblCoord.ID", "PAON", "SAON", "Street", "Lon", "Lat", "Price", "DateOfTransfer");
-        my $from = "(tblTransaction INNER JOIN tblAddress ON tblTransaction.AddressID=tblAddress.ID) INNER JOIN tblCoord ON tblAddress.ID=tblCoord.AddressID";
-        my $where =  " WHERE (lon BETWEEN $lon{min} AND $lon{max}) AND " .
-                     "(lat BETWEEN $lat{min} AND $lat{max}) AND " .
-                     $condition .
-                     "tblCoord.Type = \"location\"";
-        my $orderby = " ORDER BY DateOfTransfer ";
-        my %sqlhash = ( fields=>\@field,
-                    table=>$from,
-                    where=>$where,
-                    orderby=>$orderby);
-        my $rah = $this->{_db}->runSqlHash_rtnAoHRef(\%sqlhash);
-        return $rah;
-    }
-    
-    sub LRDBaveragePrice{
-        my ($this, $rah) = @_;
-        print $rah . "\n";
-        my $pricetotal = 0;
-        my $size = @{$rah};
-        foreach my $rh (@{$rah}){
-            $pricetotal += $rh->{Price};
-        }   
-        my $avgprice = $pricetotal / $size;
-        return $avgprice;
-    }
 
     ######################################################
     ### Logger Block  ######################################
     
     sub dataLoggerIt{
         my $this = shift;
-        $this->{_logger}->logSensorData;
-        usleep(3);
+        $this->{_logger}->logData;
     }
     
     ######################################################
@@ -205,7 +85,6 @@ package ns_loopit{
 #        $this->{_slidemax} = ns_gpio->new('a', 4);
         $this->{_aud}->{_minyear} = 2008;
         $this->{_aud}->{_maxyear} = $this->{_t}->year;
-        $this->{_aud}->{_maxdist} = 45;
     }
 
     sub LDDBpercussDemoIt{
@@ -221,15 +100,14 @@ package ns_loopit{
     }
 
     sub LDDBpercussIt{
-    # Needs heavy editing!
         my $this = shift;
         my $rh_loc = $this->{_telem}->readGPS;
         if ($rh_loc->{success} == 1){
             print "GPS success!\n";
             my $DLen = $this->{_telem}->getDegreeToMetre($rh_loc);
             my $polyco = $this->{_telem}->prepPolyCo($rh_loc, $this->{_listenshape});
-            my $condition = $this->LDDBcreateDateCondition;
-            my $rah_places = $this->LDDBprepPlaces($rh_loc, $DLen, $condition);
+            my $rah_places = $this->LDDBprepPlaces($rh_loc, $DLen);
+            my $c = $this->{_telem}->{_compass}->readValue;
             if ($rah_places){
                 my @do;
                 foreach my $rh_pl (@{$rah_places}){
@@ -237,16 +115,22 @@ package ns_loopit{
                     if ($this->{_telem}->checkPointIsInShape($rh_pl, $polyco) == 1){
                         my $l2 = {
                                     lon => $rh_pl->{lon},
-                                    lat => $rh_pl->{lat},
-                        };  
+                                    lat => $rh_pl->{lat}
+                        };
+                        my $absAngle = $this->{_telem}->getPointToPointAngle($rh_loc, $l2);
+                        my $relAngle = $c - $absAngle;
+                        if ($relAngle > 180) {
+                           $relAngle = 360 - $relAngle;
+                        }   
                         my $rh_do = {
                                         dist => $this->{_telem}->getDistanceInMetres($rh_loc, $l2),
+                                        angle => $relAngle
                         };
 #                        print "price is $rh_pl->{Price} vs tune of $pricetune\n";
-                        push @do, $rh_do
+                        push @do, $rh_do;
                     }
                 }
-                $this->{_aud}->LDDBpercussBasic1(\@do);
+                $this->{_aud}->LDDBpercussBasic1($this->{_maxdist}, \@do);
             }
         }
     }
@@ -259,48 +143,131 @@ package ns_loopit{
             case (0){   $cond = " AND (status_rc = 'SUBMITTED' or status_rc = 'STARTED') "; }
             case (3){   
                         my $btmyear = $rh->{btm}->strftime('%Y-%m-%d');
-                        $cond = " AND (status_rc = 'SUBMITTED' OR status_rc = 'STARTED' OR (status_rc = 'COMPLETED' AND completed_date >= '$btmyear')) ";
+                        $cond = " AND (status_rc = 'SUBMITTED' OR status_rc = 'STARTED' OR (status_rc = 'COMPLETED' AND p.completed_date >= '$btmyear')) ";
                     }
             case (4){
                         my $topyear = $rh->{top}->strftime('%Y-%m-%d');
                         my $btmyear = $rh->{btm}->strftime('%Y-%m-%d');
-                        $cond = " AND (status_rc = 'COMPLETED' AND completed_date <= '$topyear' completed_date >= '$btmyear') ";
+                        $cond = " AND (status_rc = 'COMPLETED' AND p.completed_date <= '$topyear' AND p.completed_date >= '$btmyear') ";
                     }
             case (6){
                         my $topyear = $this->{_daterange}->{_drp}->{highDate};
                         my $btmyear = $this->{_daterange}->{_drp}->{lowDate};
                         $cond = " AND (status_rc = 'DELETED' OR status_rc = 'LAPSED' OR status_rc = 'STARTED' OR status_rc = 'SUBMITTED' OR " . 
-                                " (status_rc = 'COMPLETED' AND completed_date <= '$topyear' AND completed_date >= '$btmyear')) ";
+                                " (status_rc = 'COMPLETED' AND p.completed_date <= '$topyear' AND p.completed_date >= '$btmyear')) ";
                     }
             case (7){
                         my $topyear = $rh->{top}->strftime('%Y-%m-%d');
-                        $cond = " AND (status_rc = 'DELETED' OR status_rc = 'LAPSED' OR (status_rc = 'COMPLETED' AND completed_date <= '$topyear')) ";
+                        $cond = " AND (status_rc = 'DELETED' OR status_rc = 'LAPSED' OR (status_rc = 'COMPLETED' AND p.completed_date <= '$topyear')) ";
                     }
             case (8){   $cond = " AND (status_rc = 'DELETED' OR status_rc = 'LAPSED') "; }
         }
         return $cond;
     }
 
+    sub LDDBcreateSwitchCondition{
+        my $this = shift;
+        my $sql = {  ra_fields => [], from=> ")", where => "", having => "" };
+        switch ($this->{_version}){
+            case ("all"){
+                        }
+            case ("shi"){
+                            $sql->{ra_fields} = ["SUM(erl.number_of_units) AS existingSocialHousing", "SUM(prl.number_of_units) AS proposedSocialHousing"];
+                            $sql->{from} = " LEFT JOIN app_ldd.ld_exist_res_lines AS erl ON p.permission_id = erl.permission_id ) " .
+                                           " LEFT JOIN app_ldd.ld_prop_res_lines AS prl ON p.permission_id = prl.permission_id ";
+                            $sql->{having} = " AND ((SUM(prl.number_of_units) - SUM(erl.number_of_units)) $this->{_val}) ";
+                        }
+            case ("osi"){
+                            $sql->{ra_fields} = ["SUM(esl.area) AS existingSpace", "SUM(psl.area) AS proposedSpace"];
+                            $sql->{from}  = " LEFT JOIN app_ldd.ld_exist_open_space_lines AS esl ON p.permission_id = esl.permission_id ) " . 
+                                            " LEFT JOIN app_ldd.ld_prop_open_space_lines AS psl ON p.permission_id = psl.permission_id ";
+                            $sql->{having} = " AND ((SUM(psl.area) - SUM(esl.area)) $this->{_val}) ";
+                        }
+            case ("textsearch"){
+                            $sql->{where} =  " AND (descr LIKE '%$this->{_val}')";
+                        }
+        }
+        return $sql;
+    }
+
     sub LDDBprepPlaces{ 
-        my ($this, $rh_loc, $DLen, $condition) = @_;
-        my $distmet = 20;
-        my $distlon = $distmet/$DLen->{lon};
-        my $distlat = $distmet/$DLen->{lat};
+        my ($this, $rh_loc, $DLen) = @_;
+        my $dateCondition = $this->LDDBcreateDateCondition;
+        my $rh_sc = $this->LDDBcreateSwitchCondition;
+        my $distlon = $this->{_maxdist}/$DLen->{lon};
+        my $distlat = $this->{_maxdist}/$DLen->{lat};
         my %lon = (min=>$rh_loc->{lon} - $distlon, max=>$rh_loc->{lon} +$distlon) ;
         my %lat = (min=>$rh_loc->{lat} - $distlat, max=>$rh_loc->{lat} +$distlat) ;
-        my @field = ("lon", "lat", "completed_date", "permission_date", "permission_lapses_date");
-        my $from = "app_ldd.ld_permissions AS perm LEFT JOIN ca_permlatlon AS ll ON perm.permission_id=ll.permission_id";
+        my @groupby = ("lon", "lat", "p.completed_date", "permission_date", "permission_lapses_date", "p.permission_id");
+        my @field;
+        push @field, "COUNT(prl_super.permission_id) AS branches";
+        push @field, @groupby;
+        push @field, @{$rh_sc->{ra_fields}};
+        my $having = " HAVING COUNT(prl_super.permission_id) = 0 " . $rh_sc->{having} ;
+        my $from = " (((app_ldd.ld_permissions AS p LEFT JOIN app_ldd.ns_permlatlon AS ll ON p.permission_id=ll.permission_id) " . 
+                    "LEFT JOIN app_ldd.ld_prop_res_lines AS prl_super ON p.permission_id=prl_super.superseded_permission_id) " . $rh_sc->{from};
         my $where =  " WHERE (lon BETWEEN $lon{min} AND $lon{max}) AND " .
                      "(lat BETWEEN $lat{min} AND $lat{max}) " . 
-                      $condition;
-        my $orderby = " ORDER BY completed_date ";
+                      $dateCondition;
+        my $orderby = " ORDER BY p.completed_date ";
         my %sqlhash = ( fields=>\@field,
                     table=>$from,
                     where=>$where,
+                    groupbys=>\@groupby,
+                    having=> $having,
                     orderby=>$orderby);
         my $rah = $this->{_db}->runSqlHash_rtnAoHRef(\%sqlhash);
         #$this->{_testtools}->printRefArrayOfHashes($rah);
         return $rah;
+    }
+
+    sub LDDBprepPolygonPlaces{
+        my ($this, $rh_loc, $DLen) = @_;
+        my $scoopDist = 600; # this is how far away the points are the sniffer can check. For very large sites, this may cause problems.
+        my $dateCondition = $this->LDDBcreateDateCondition;
+        my $rh_sc = $this->LDDBcreateSwitchCondition;
+        my $distlon = $scoopDist/$DLen->{lon};
+        my $distlat = $scoopDist/$DLen->{lat};
+        #Get the dimensions of the query box we are looking in/
+        my %lon = (min=>$rh_loc->{lon} - $distlon, max=>$rh_loc->{lon} +$distlon) ;
+        my %lat = (min=>$rh_loc->{lat} - $distlat, max=>$rh_loc->{lat} +$distlat) ;
+#        my @groupby = ("lon", "lat", "p.completed_date", "p.permission_id");
+
+        #first we have to do a view that limits what we are looking at, so we don't have to do complicated polygon calcs on the whole DB!
+        my $groupby = "lon, lat, p.completed_date, p.permission_id";
+        my $field = "COUNT(prl_super.permission_id) AS branches, $groupby";
+        foreach my $f (@{$rh_sc->{ra_fields}}){ $field .= ", $f";}
+        my $from = " (((app_ldd.ld_permissions AS p LEFT JOIN app_ldd.ns_permlatlon AS ll ON p.permission_id=ll.permission_id) " . 
+                    "LEFT JOIN app_ldd.ld_prop_res_lines AS prl_super ON p.permission_id=prl_super.superseded_permission_id) " . $rh_sc->{from};
+        my $where =  " WHERE (lon BETWEEN $lon{min} AND $lon{max}) AND " .
+                     "(lat BETWEEN $lat{min} AND $lat{max}) " . 
+                      $dateCondition;
+        my $having = " HAVING COUNT(prl_super.permission_id) = 0 " . $rh_sc->{having} ;
+        my $sv = $this->{_db}->runsql_rtnSuccessOnly("DROP VIEW IF EXISTS app_ldd.v_perm_widerarea;");
+        my $sql = "CREATE VIEW app_ldd.v_perm_widerarea AS SELECT $field FROM $from WHERE $where GROUP BY $groupby HAVING $having;";
+        my $sq = $this->{_db}->runsql_rtnSuccessOnly($sql);
+        print "$sql\n";
+        # Now we go on to the polygon calcs
+        my $listenPoly = $this->{_telem}->prepPolyCo($rh_loc, $this->{_listenshape});
+        my @listenPts = $listenPoly->points;
+        my $poly = "";
+        foreach my $pt (@listenPts){ $poly .= "$pt->[0] $pt->[1],"; }
+        chop $poly;
+        my @geofield = ("CASE WHEN the_geom IS NOT NULL THEN ST_DWithin(the_geom::geography, 'SRID=4326;POLYGON(($poly))'::geometry, 5) ELSE ST_DWithin(the_geom_pt::geography, 'SRID=4326;POLYGON(($poly))'::geometry, 5) END",  "CASE WHEN the_geom IS NOT Null THEN ST_Distance(the_geom::geography, 'SRID=4326;POINT($rh_loc->{lon} $rh_loc->{lat})'::geometry) ELSE ST_Distance(the_geom_pt::geography, 'SRID=4326;POINT($rh_loc->{lon} $rh_loc->{lat})'::geometry) END");
+        my @fields = split($field, ", ");
+        push @fields, @geofield;
+        $from = "app_ldd.v_perm_widerarea AS v INNER JOIN app_ldd.nsll_ld_permissions_geo AS geo ON v.permission_id=geo.objectid";
+        $where = "";
+        my %sqlhash = ( fields=>\@fields,
+                    table=>$from,
+                    where=>"",
+                    groupbys=>\(),
+                    having=>"",
+                    orderby=>"");
+        my $rah = $this->{_db}->runSqlHash_rtnAoHRef(\%sqlhash);
+        #$this->{_testtools}->printRefArrayOfHashes($rah);
+        return $rah;
+      
     }
     
 }
