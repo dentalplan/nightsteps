@@ -27,6 +27,19 @@ package ns_audinterface{
         }
         $this->digClicks($file, \@clicks);
     }
+    
+    sub LDDBpercussBasic2{
+        my ($this, $maxdist, $rah_do) = @_;
+        my $out = 1;
+        my $file = $this->{_gpoutpath} . "dig$out.o";
+        my @clicks = ();
+        foreach my $rh_do (@{$rah_do}){
+            my $click = (($maxdist - $rh_do->{dist}) / $maxdist);
+            push @clicks, $click;
+        }
+        $this->digClicks($file, \@clicks);
+    }
+
 
     sub physSendInstructions{
         my ($this, $file, $ra_instr) = @_;

@@ -16,11 +16,11 @@ my $maxdist = 85;
 my $switch1 = ns_gpio->new('a', 7);
 my @switchbands = (
     {low=>60, high=>95, logic=>'LDDBpercussDemo', version=>'main', val=>''},
-    {low=>135, high=>165, logic=>'LDDBpercuss1', version=>'osi', val=>'<= -1'},
-    {low=>250, high=>280, logic=>'LDDBpercuss1', version=>'osi', val=>'>= 1'},
-    {low=>410, high=>450, logic=>'LDDBpercuss1', version=>'shi', val=>'<= -1'},
-    {low=>590, high=>635, logic=>'LDDBpercuss1', version=>'shi', val=>'>= 1'},
-    {low=>950, high=>1024, logic=>'LDDBpercuss1', version=>'all', val=>''},
+    {low=>135, high=>165, logic=>'LDDBpercuss2', version=>'osi', val=>'<= -1'},
+    {low=>250, high=>280, logic=>'LDDBpercuss2', version=>'osi', val=>'>= 1'},
+    {low=>410, high=>450, logic=>'LDDBpercuss2', version=>'shi', val=>'<= -1'},
+    {low=>590, high=>635, logic=>'LDDBpercuss2', version=>'shi', val=>'>= 1'},
+    {low=>950, high=>1024, logic=>'LDDBpercuss2', version=>'all', val=>''},
     );
 my @dateScale = (
     {low=>0, high=>178, range=>'stillToCome'},

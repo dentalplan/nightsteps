@@ -164,24 +164,30 @@ package ns_dbinterface;
 
 	sub runSqlHash_rtnAoHRef{
 		my( $this,
-		    $r_barrel, 
+		    $r_barrel,
+        $ascheck 
 		) = @_;
 		my ($r_bunch, @row);
 		my $fields = $this->unpackFields_rtnStr($r_barrel->{fields});
-    my @keyfields;
-    foreach my $f (@{$r_barrel->{fields}}){
-        if($f =~ m/(.+) AS (.*)/){
-            my $as = $2;
-            chomp $as;
-            push @keyfields, $as;
-        }else{
-            push @keyfields, $f;
-        }
+    my @keyfield;
+    if ($ascheck){
+      print "Performing AS check\n";
+      foreach my $f (@{$r_barrel->{fields}}){
+          if($f =~ m/(.+) AS (.*)/){
+              my $as = $2;
+              chomp $as;
+              push @keyfield, $as;
+          }else{
+              push @keyfield, $f;
+          }
+      }
     }
-    my $gbsize = @{$r_barrel->{groupbys}};
     my $groupby = "";
-    if ($gbsize > 0){
-        $groupby = " GROUP BY " . $this->unpackFields_rtnStr($r_barrel->{groupbys});
+    if ($r_barrel->{groupbys}){
+      my $gbsize = @{$r_barrel->{groupbys}};
+      if ($gbsize > 0){
+          $groupby = " GROUP BY " . $this->unpackFields_rtnStr($r_barrel->{groupbys});
+      }
     }
 		my $sql = "SELECT " . $fields . 
 			  " FROM " . $r_barrel->{table} .
@@ -196,10 +202,17 @@ package ns_dbinterface;
 		while (@row = $query->fetchrow_array){
 			my $r_fruit;
 			$r_fruit->{_table} = $r_barrel->{table};
-			for (my $i = 0; $i < $num_fields; $i++){
-				my $fieldname = $r_barrel->{fields}[$i];
-				$r_fruit->{$fieldname} = $row[$i];
-			}
+      if ($ascheck){
+        for (my $i = 0; $i < $num_fields; $i++){
+          my $fieldname = $keyfield[$i];
+          $r_fruit->{$fieldname} = $row[$i];
+        }
+      }else{
+        for (my $i = 0; $i < $num_fields; $i++){
+          my $fieldname = $r_barrel->{fields}[$i];
+          $r_fruit->{$fieldname} = $row[$i];
+        }
+      }
 			push (@{$r_bunch}, $r_fruit);	
 		}
 		return $r_bunch;		

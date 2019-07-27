@@ -16,6 +16,7 @@ while True:
             c = compass.getBearing()
         except:
             print "Error getting compass"
+            time.sleep(1)
         print >> f, str(c) 
         time.sleep(0.01)
         f.close()

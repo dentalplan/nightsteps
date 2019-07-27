@@ -54,6 +54,7 @@ package ns_loopit{
         my $this = shift;
         switch ($this->{_logic}){
             case "LDDBpercuss1"{ $this->LDDBpercussSetup}
+            case "LDDBpercuss2"{ $this->LDDBpercussSetup}
         }
     }
 
@@ -61,6 +62,7 @@ package ns_loopit{
         my $this = shift;
         switch ($this->{_logic}){
             case "LDDBpercuss1"{ $this->LDDBpercussIt}
+            case "LDDBpercuss2"{ $this->LDDBpercussItPoly}
             case "LDDBpercussDemo"{ $this->LDDBpercussDemoIt}
             case "dataLogger" { $this->dataLoggerIt }
         }
@@ -131,6 +133,35 @@ package ns_loopit{
                     }
                 }
                 $this->{_aud}->LDDBpercussBasic1($this->{_maxdist}, \@do);
+            }
+        }
+    }
+
+    sub LDDBpercussItPoly{
+        my $this = shift;
+        my $rh_loc = $this->{_telem}->readGPS;
+        if ($rh_loc->{success} == 1){
+            print "GPS success!\n";
+            my $DLen = $this->{_telem}->getDegreeToMetre($rh_loc);
+#            my $polyco = $this->{_telem}->prepPolyCo($rh_loc, $this->{_listenshape});
+            my $rah_places = $this->LDDBprepPolygonPlaces($rh_loc, $DLen);
+            @{$rah_places} = sort { $b->{detected} <=> $a->{detected}    or 
+                                    $a->{distance} <=> $b->{distance} 
+                                  } @{$rah_places};
+            if ($rah_places){
+                my @do;
+                foreach my $rh_pl (@{$rah_places}){
+#                    print "$rh_pl->{SAON} $rh_pl->{PAON} $rh_pl->{Street}\n";
+                    if ($rh_pl->{detected}){
+                        print "detected detected!\n\n";
+                        my $rh_do = {
+                                        dist => $rh_pl->{distance},
+                        };
+#                        print "price is $rh_pl->{Price} vs tune of $pricetune\n";
+                        push @do, $rh_do;
+                    }
+                }
+                $this->{_aud}->LDDBpercussBasic2($this->{_maxdist}, \@do);
             }
         }
     }
@@ -216,7 +247,7 @@ package ns_loopit{
                     groupbys=>\@groupby,
                     having=> $having,
                     orderby=>$orderby);
-        my $rah = $this->{_db}->runSqlHash_rtnAoHRef(\%sqlhash);
+        my $rah = $this->{_db}->runSqlHash_rtnAoHRef(\%sqlhash, 0);
         #$this->{_testtools}->printRefArrayOfHashes($rah);
         return $rah;
     }
@@ -234,7 +265,7 @@ package ns_loopit{
 #        my @groupby = ("lon", "lat", "p.completed_date", "p.permission_id");
 
         #first we have to do a view that limits what we are looking at, so we don't have to do complicated polygon calcs on the whole DB!
-        my $groupby = "lon, lat, p.completed_date, p.permission_id";
+        my $groupby = "lon, lat, p.completed_date, p.permission_id, p.status_rc";
         my $field = "COUNT(prl_super.permission_id) AS branches, $groupby";
         foreach my $f (@{$rh_sc->{ra_fields}}){ $field .= ", $f";}
         my $from = " (((app_ldd.ld_permissions AS p LEFT JOIN app_ldd.ns_permlatlon AS ll ON p.permission_id=ll.permission_id) " . 
@@ -244,7 +275,7 @@ package ns_loopit{
                       $dateCondition;
         my $having = " HAVING COUNT(prl_super.permission_id) = 0 " . $rh_sc->{having} ;
         my $sv = $this->{_db}->runsql_rtnSuccessOnly("DROP VIEW IF EXISTS app_ldd.v_perm_widerarea;");
-        my $sql = "CREATE VIEW app_ldd.v_perm_widerarea AS SELECT $field FROM $from WHERE $where GROUP BY $groupby HAVING $having;";
+        my $sql = "CREATE VIEW app_ldd.v_perm_widerarea AS SELECT $field FROM $from $where GROUP BY $groupby $having;";
         my $sq = $this->{_db}->runsql_rtnSuccessOnly($sql);
         print "$sql\n";
         # Now we go on to the polygon calcs
@@ -253,22 +284,23 @@ package ns_loopit{
         my $poly = "";
         foreach my $pt (@listenPts){ $poly .= "$pt->[0] $pt->[1],"; }
         chop $poly;
-        my @geofield = ("CASE WHEN the_geom IS NOT NULL THEN ST_DWithin(the_geom::geography, 'SRID=4326;POLYGON(($poly))'::geometry, 5) ELSE ST_DWithin(the_geom_pt::geography, 'SRID=4326;POLYGON(($poly))'::geometry, 5) END",  "CASE WHEN the_geom IS NOT Null THEN ST_Distance(the_geom::geography, 'SRID=4326;POINT($rh_loc->{lon} $rh_loc->{lat})'::geometry) ELSE ST_Distance(the_geom_pt::geography, 'SRID=4326;POINT($rh_loc->{lon} $rh_loc->{lat})'::geometry) END");
-        my @fields = split($field, ", ");
+        my @geofield = ("CASE WHEN the_geom IS NOT NULL THEN ST_DWithin(the_geom::geography, 'SRID=4326;POLYGON(($poly))'::geography, 5) " . 
+                        "ELSE ST_DWithin(the_geom_pt::geography, 'SRID=4326;POLYGON(($poly))'::geography, 5) END AS detected",  
+                        "CASE WHEN the_geom IS NOT Null THEN ST_Distance(the_geom::geography, 'SRID=4326;POINT($rh_loc->{lon} $rh_loc->{lat})'::geography) " . 
+                        "ELSE ST_Distance(the_geom_pt::geography, 'SRID=4326;POINT($rh_loc->{lon} $rh_loc->{lat})'::geography) END AS distance");
+        my @fields = ("lat", "lon", "completed_date", "permission_id", "status_rc");
         push @fields, @geofield;
         $from = "app_ldd.v_perm_widerarea AS v INNER JOIN app_ldd.nsll_ld_permissions_geo AS geo ON v.permission_id=geo.objectid";
         $where = "";
         my %sqlhash = ( fields=>\@fields,
                     table=>$from,
                     where=>"",
-                    groupbys=>\(),
+#                    groupbys=>\(),
                     having=>"",
                     orderby=>"");
-        my $rah = $this->{_db}->runSqlHash_rtnAoHRef(\%sqlhash);
+        my $rah = $this->{_db}->runSqlHash_rtnAoHRef(\%sqlhash, 1);
         #$this->{_testtools}->printRefArrayOfHashes($rah);
         return $rah;
-      
     }
-    
 }
 1;
