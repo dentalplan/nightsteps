@@ -29,7 +29,7 @@ package ns_audinterface{
     }
     
     sub LDDBpercussBasic2{
-        my ($this, $maxdist, $rah_do) = @_;
+        my ($this, $maxdist, $rah_do, $stereo) = @_;
         my $out = 1;
         my $file = $this->{_gpoutpath} . "dig$out.o";
         my @clicks = ();
@@ -48,6 +48,45 @@ package ns_audinterface{
             print FO "$l\n";
         }
         close FO;
+    }
+
+    sub LDDBpercussStereo{
+        my ($this, $maxdist, $rah_do) = @_; #strength, 
+        my $mode = 't';
+        my $size = @{$rah_do};
+        my @lines1 = ($mode);
+        my @lines2 = ($mode);
+        for (my $i=0; $i<$size; $i++){
+            my $click = (($maxdist - $rah_do->[$i]->{dist}) / $maxdist);
+            my $frc = int($click * 20);
+            my $rep = round($click * 3) + 1;
+            my $h = 15 + $frc;
+            my $l = 55 - $frc;
+            if ($rah_do->[$i]->{r}){
+                for (my $k=0; $k<$rep;$k++){
+                    push @lines1, "h$h";
+                    push @lines1, "l$l";
+                }
+            }else{
+                my $t = ($h + $l) * $rep;
+                push @lines1, "l$t";
+            }
+            if ($rah_do->[$i]->{l}){
+                for (my $k=0; $k<$rep;$k++){
+                    push @lines2, "h$h";
+                    push @lines2, "l$l";
+                }
+            }else{
+                my $t = ($h + $l) * $rep;
+                push @lines2, "l$t";
+            }
+            push @lines1, "l200";
+            push @lines2, "l200";
+        }
+        push @lines1, "l500";
+        push @lines2, "l500";
+        $this->physSendInstructions($this->{_gpoutpath} . "dig1.o", \@lines1);
+        $this->physSendInstructions($this->{_gpoutpath} . "dig2.o", \@lines2);
     }
 
     sub digClicks{

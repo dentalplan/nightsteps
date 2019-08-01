@@ -12,7 +12,10 @@ use Time::HiRes qw( usleep);
 #my @listenshape = ([-6,-6], [-15,40], [15,40], [6,-6], [-6,-6]);
 #my $maxdist = 45;
 my @listenshape = ([-6,-6], [-30,75], [-10,80], [10, 80], [30,75], [6,-6], [-6,-6]);
+my @listenshape_l = ([-6,-6], [-35,75], [-10,80], [10, 80], [15,70], [0,-8], [-6,-6]);
+my @listenshape_r = ([0,-8], [15,70], [10,80], [-10, 80], [30,75], [6,-6], [0,-8]);
 my $maxdist = 85;
+my $stereo = 1;
 my $switch1 = ns_gpio->new('a', 7);
 my @switchbands = (
     {low=>60, high=>95, logic=>'LDDBpercussDemo', version=>'main', val=>''},
@@ -50,6 +53,9 @@ for (my $i=0;;$i++){
         if ($read > $s->{low} && $read < $s->{high} && ($it->{_logic} ne $s->{logic} || $it->{_version} ne $s->{version} || $it->{_val} ne $s->{val})){
             $it = ns_loopit->new(   {
                                       listenshape => \@listenshape,
+                                      listenshapeLeft => \@listenshape_l,
+                                      listenshapeRight => \@listenshape_r,
+                                      stereo => $stereo,
                                       daterange => $dr,
                                       logic => $s->{logic},
                                       version => $s->{version},
@@ -62,7 +68,7 @@ for (my $i=0;;$i++){
     }
     $it->{_logger}->logData();
     $it->iterate;
-    usleep(10000);
+    usleep(20000);
     if ($i==1500){
         $i = 0;
 #        print "SWITCH READING: $read\n";

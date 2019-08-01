@@ -21,8 +21,6 @@ package ns_loopit{
     use ns_audinterface;
     use ns_gpio;
     use ns_logger;
-#    use Math::Polygon;
-#    use Math::Polygon::Calc;
     use Switch;
     use Time::Piece;
 
@@ -30,10 +28,10 @@ package ns_loopit{
         my $class = shift;
         my $rh = shift;
         my $this = {
-            _listenshape => $rh->{listenshape},
             _daterange => $rh->{daterange},
             _logic => $rh->{logic},
             _val => $rh->{val},
+            _stereo => $rh->{stereo},
             _version => $rh->{version},
             _maxdist => $rh->{maxdist},
             _testtools => ns_testtools->new,
@@ -44,6 +42,13 @@ package ns_loopit{
             _dbfilepath => '/home/pi/nsdata/',
             _t => Time::Piece->new,      
         };
+        if ($this->{_stereo}){
+            $this->{_listenshapeLeft} = $rh->{listenshapeLeft};
+            $this->{_listenshapeRight} = $rh->{listenshapeRight};
+        }else{
+            $this->{_listenshape} = $rh->{listenshape};
+        }
+
         bless $this, $class;
         $this->{_logger} = ns_logger->new($this);
         $this->loopitSetup;
@@ -97,6 +102,7 @@ package ns_loopit{
         for(my $i=0; $i<$beats+1; $i++){
             my $f = int(rand($size));
             system "cp /home/pi/nsdata/gpio/$fn[$f] /home/pi/nsdata/gpio/dig1.o";
+            system "cp /home/pi/nsdata/gpio/$fn[$f] /home/pi/nsdata/gpio/dig2.o"
         }
         sleep($beats*2);
     }
@@ -143,25 +149,45 @@ package ns_loopit{
         if ($rh_loc->{success} == 1){
             print "GPS success!\n";
             my $DLen = $this->{_telem}->getDegreeToMetre($rh_loc);
-#            my $polyco = $this->{_telem}->prepPolyCo($rh_loc, $this->{_listenshape});
             my $rah_places = $this->LDDBprepPolygonPlaces($rh_loc, $DLen);
-            @{$rah_places} = sort { $b->{detected} <=> $a->{detected}    or 
-                                    $a->{distance} <=> $b->{distance} 
-                                  } @{$rah_places};
+            if ($this->{_stereo}){
+                @{$rah_places} = sort { $b->{detected_left} <=> $a->{detected_left}    or 
+                                        $b->{detected_right} <=> $a->{detected_right}    or 
+                                        $a->{distance} <=> $b->{distance} 
+                                      } @{$rah_places};
+            }else{
+                @{$rah_places} = sort { $b->{detected} <=> $a->{detected}    or 
+                                        $a->{distance} <=> $b->{distance} 
+                                      } @{$rah_places};
+            }
             if ($rah_places){
                 my @do;
-                foreach my $rh_pl (@{$rah_places}){
-#                    print "$rh_pl->{SAON} $rh_pl->{PAON} $rh_pl->{Street}\n";
-                    if ($rh_pl->{detected}){
-                        print "detected detected!\n\n";
-                        my $rh_do = {
-                                        dist => $rh_pl->{distance},
-                        };
-#                        print "price is $rh_pl->{Price} vs tune of $pricetune\n";
-                        push @do, $rh_do;
+                if ($this->{_stereo}){
+                    foreach my $rh_pl (@{$rah_places}){
+                        if ($rh_pl->{detected_left} || $rh_pl->{detected_right}){
+                            print "$rh_pl->{permission_id} detected! Left $rh_pl->{detected_left}. Right $rh_pl->{detected_right}.\n\n";
+                            my $rh_do = {
+                                            dist => $rh_pl->{distance},
+                                            l => $rh_pl->{detected_left}, 
+                                            r => $rh_pl->{detected_right} 
+                            };
+                            push @do, $rh_do;
+                        }
                     }
+                    $this->{_aud}->LDDBpercussStereo($this->{_maxdist}, \@do);
+                }else{
+                    foreach my $rh_pl (@{$rah_places}){
+                        if ($rh_pl->{detected}){
+                            print "detected detected!\n\n";
+                            my $rh_do = {
+                                            dist => $rh_pl->{distance},
+                            };
+                            push @do, $rh_do;
+                        }
+                    }
+                    $this->{_aud}->LDDBpercussBasic2($this->{_maxdist}, \@do);
                 }
-                $this->{_aud}->LDDBpercussBasic2($this->{_maxdist}, \@do);
+                
             }
         }
     }
@@ -277,19 +303,11 @@ package ns_loopit{
         my $sv = $this->{_db}->runsql_rtnSuccessOnly("DROP VIEW IF EXISTS app_ldd.v_perm_widerarea;");
         my $sql = "CREATE VIEW app_ldd.v_perm_widerarea AS SELECT $field FROM $from $where GROUP BY $groupby $having;";
         my $sq = $this->{_db}->runsql_rtnSuccessOnly($sql);
-        print "$sql\n";
+        #print "$sql\n";
+        my $ra_geofield = $this->setupPlaceGeoFields($rh_loc);
         # Now we go on to the polygon calcs
-        my $listenPoly = $this->{_telem}->prepPolyCo($rh_loc, $this->{_listenshape});
-        my @listenPts = $listenPoly->points;
-        my $poly = "";
-        foreach my $pt (@listenPts){ $poly .= "$pt->[0] $pt->[1],"; }
-        chop $poly;
-        my @geofield = ("CASE WHEN the_geom IS NOT NULL THEN ST_DWithin(the_geom::geography, 'SRID=4326;POLYGON(($poly))'::geography, 5) " . 
-                        "ELSE ST_DWithin(the_geom_pt::geography, 'SRID=4326;POLYGON(($poly))'::geography, 5) END AS detected",  
-                        "CASE WHEN the_geom IS NOT Null THEN ST_Distance(the_geom::geography, 'SRID=4326;POINT($rh_loc->{lon} $rh_loc->{lat})'::geography) " . 
-                        "ELSE ST_Distance(the_geom_pt::geography, 'SRID=4326;POINT($rh_loc->{lon} $rh_loc->{lat})'::geography) END AS distance");
         my @fields = ("lat", "lon", "completed_date", "permission_id", "status_rc");
-        push @fields, @geofield;
+        push @fields, @{$ra_geofield};
         $from = "app_ldd.v_perm_widerarea AS v INNER JOIN app_ldd.nsll_ld_permissions_geo AS geo ON v.permission_id=geo.objectid";
         $where = "";
         my %sqlhash = ( fields=>\@fields,
@@ -302,5 +320,40 @@ package ns_loopit{
         #$this->{_testtools}->printRefArrayOfHashes($rah);
         return $rah;
     }
+
+    sub setupPlaceGeoFields{
+        my ($this, $rh_loc) = @_;
+        my @geofield;
+        if ($this->{_stereo}){
+            my @listenPolys = ($this->{_telem}->prepPolyCo($rh_loc, $this->{_listenshapeLeft}),
+                              $this->{_telem}->prepPolyCo($rh_loc, $this->{_listenshapeRight}));
+            my @poly;
+            foreach my $lp (@listenPolys){
+                my @listenPts = $lp->points;
+                my $polyStr = "";
+                foreach my $pt (@listenPts){ $polyStr .= "$pt->[0] $pt->[1],"; }
+                chop $polyStr;
+                push @poly, $polyStr;
+            }
+            @geofield = ( "CASE WHEN the_geom IS NOT NULL THEN ST_DWithin(the_geom::geography, 'SRID=4326;POLYGON(($poly[0]))'::geography, 5) " . 
+                          "ELSE ST_DWithin(the_geom_pt::geography, 'SRID=4326;POLYGON(($poly[0]))'::geography, 5) END AS detected_left",  
+                          "CASE WHEN the_geom IS NOT NULL THEN ST_DWithin(the_geom::geography, 'SRID=4326;POLYGON(($poly[1]))'::geography, 5) " . 
+                          "ELSE ST_DWithin(the_geom_pt::geography, 'SRID=4326;POLYGON(($poly[1]))'::geography, 5) END AS detected_right",  
+                          "CASE WHEN the_geom IS NOT Null THEN ST_Distance(the_geom::geography, 'SRID=4326;POINT($rh_loc->{lon} $rh_loc->{lat})'::geography) " . 
+                          "ELSE ST_Distance(the_geom_pt::geography, 'SRID=4326;POINT($rh_loc->{lon} $rh_loc->{lat})'::geography) END AS distance");
+        }else{
+            my $listenPoly = $this->{_telem}->prepPolyCo($rh_loc, $this->{_listenshape});
+            my @listenPts = $listenPoly->points;
+            my $poly = "";
+            foreach my $pt (@listenPts){ $poly .= "$pt->[0] $pt->[1],"; }
+            chop $poly;
+            @geofield = ("CASE WHEN the_geom IS NOT NULL THEN ST_DWithin(the_geom::geography, 'SRID=4326;POLYGON(($poly))'::geography, 5) " . 
+                          "ELSE ST_DWithin(the_geom_pt::geography, 'SRID=4326;POLYGON(($poly))'::geography, 5) END AS detected",  
+                          "CASE WHEN the_geom IS NOT Null THEN ST_Distance(the_geom::geography, 'SRID=4326;POINT($rh_loc->{lon} $rh_loc->{lat})'::geography) " . 
+                          "ELSE ST_Distance(the_geom_pt::geography, 'SRID=4326;POINT($rh_loc->{lon} $rh_loc->{lat})'::geography) END AS distance");
+        }
+        return \@geofield;
+    }
+
 }
 1;

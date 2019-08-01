@@ -17,11 +17,17 @@ from collections import deque
 
 digOut = [DigitalOutputDevice(5), DigitalOutputDevice(6), DigitalOutputDevice(17)]
 state = [0,0,0]
+magnetic = [True,True,False]
 #look in the following files for instructions
 filepath = ["/home/pi/nsdata/gpio/dig1.o", "/home/pi/nsdata/gpio/dig2.o", "/home/pi/nsdata/gpio/dig3.o"]
+statepath = ["/home/pi/nsdata/gpio/mag1.s", "/home/pi/nsdata/gpio/mag2.s", "/home/pi/nsdata/gpio/mag3.s"]
 #make two double ended queues for instructions, one for eeach of the digital outs
 queuedInstruction = [deque(['s']), deque(['s']), deque(['s'])]
 activeInstruction = [deque(['s']), deque(['s']), deque(['s'])]
+for sp in statepath:
+    with open(sp, "w") as s:
+        s.write("0")
+        s.close()
 for instr in activeInstruction:
     instr.clear()
 for instr in queuedInstruction:
@@ -70,6 +76,10 @@ while True:
  #               print "matched high"
                 if (state[i] == 0):
                     state[i] = 1
+                    if magnetic[i]:
+                        with open(statepath[i], "w") as s:
+                            s.write("1")
+                            s.close()
                     digOut[i].on()
                     print str(i) + " on\n"
                 millis = int(matchObjHigh.group(1)) - 1
@@ -81,6 +91,10 @@ while True:
                 if (state[i] == 1):
                     state[i] = 0
                     digOut[i].off()
+                    if magnetic[i]:
+                        with open(statepath[i], "w") as s:
+                            s.write("0")
+                            s.close()
                     print str(i) + "off\n"
                 millis = int(matchObjLow.group(1)) - 1
                 if (millis > 0):

@@ -10,6 +10,7 @@ package ns_gpio{
                     _mode => shift,
                     _channel => shift,
                     _datapath => '/home/pi/nsdata/gpio/',
+                    _compassadjust => 180
                     };
         if ($this->{_mode} eq 'a'){
             $this->{_presReadings} = {'','','','','','','',''};
@@ -144,7 +145,7 @@ package ns_gpio{
                 push @out, $6;
                 push @out, $7;
                 push @out, $8;
-			}
+			      }
         }
         $this->{_presReadings} = \@out;
         return \@out;
@@ -178,8 +179,12 @@ package ns_gpio{
             chomp $sens[$i];
             if ($sens[$i] =~ m/([0-9]+\.[0-9]+)/){
                 $out = $1;
-			}
-        }   
+	      		}
+        }
+        $out += $this->{_compassadjust};
+        if ($out > 360){
+            $out -= 360;
+        }
 #        print "compass:  $out\n";
         return $out;
 

@@ -29,6 +29,7 @@ package ns_telemetry{
     sub getDegreeToMetre{
         my $this = shift;
         my $l = shift;
+        print "lat: $l->{lat}, lon: $l->{lon}\n";
         my $DLon = $this->{_gis}->distance( $l->{lat},$l->{lon} => $l->{lat},$l->{lon}+1);
         my $DLat = $this->{_gis}->distance( $l->{lat},$l->{lon} => $l->{lat}+1,$l->{lon});
         my $DLen->{lon} = $DLon->meters();
@@ -60,6 +61,7 @@ package ns_telemetry{
         my ($this, $rh_loc, $ra_shape) = @_;
         my $DLen = $this->getDegreeToMetre($rh_loc);
         my $poly = Math::Polygon->new(@{$ra_shape});
+        print "Poly rotate course: $rh_loc->{course}\n";
         my $spun = $poly->rotate(centre=>[0,0], degrees=>$rh_loc->{course});
         my $polyco = $this->convertPolyCoord($spun, $rh_loc, $DLen);
         return $polyco;
