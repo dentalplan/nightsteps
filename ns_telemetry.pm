@@ -2,6 +2,7 @@ package ns_telemetry{
     
     use strict;
     use warnings;
+    use lib ".";
     use ns_gpio;
     use Math::Polygon;
     use Math::Polygon::Calc;

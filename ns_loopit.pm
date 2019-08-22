@@ -1,4 +1,4 @@
-####################################################################
+ ####################################################################
 # This is the central logic hub of nightsteps, where each possible #
 # process it can run lives, as used by nightsteps_run. It gives a  #
 # subroutinte for a single iteration of the logic, before returning#
@@ -15,6 +15,7 @@
 package ns_loopit{
     use strict;
     use warnings;
+    use lib ".";
     use ns_testtools;
     use ns_dbinterface;
     use ns_telemetry;
@@ -31,7 +32,7 @@ package ns_loopit{
             _daterange => $rh->{daterange},
             _logic => $rh->{logic},
             _val => $rh->{val},
-            _stereo => $rh->{stereo},
+            _soundmode => $rh->{soundmode},
             _version => $rh->{version},
             _maxdist => $rh->{maxdist},
             _testtools => ns_testtools->new,
@@ -42,9 +43,14 @@ package ns_loopit{
             _dbfilepath => '/home/pi/nsdata/',
             _t => Time::Piece->new,      
         };
-        if ($this->{_stereo}){
+        print "sound mode $this->{_soundmode} \n";
+        if ($this->{_soundmode} != 0){
             $this->{_listenshapeLeft} = $rh->{listenshapeLeft};
             $this->{_listenshapeRight} = $rh->{listenshapeRight};
+            my @time = localtime(time);
+            my $year = $time[5] + 1900;
+            print "present year is $year";
+            $this->{_maxyear} = $year;
         }else{
             $this->{_listenshape} = $rh->{listenshape};
         }
@@ -150,7 +156,7 @@ package ns_loopit{
             print "GPS success!\n";
             my $DLen = $this->{_telem}->getDegreeToMetre($rh_loc);
             my $rah_places = $this->LDDBprepPolygonPlaces($rh_loc, $DLen);
-            if ($this->{_stereo}){
+            if ($this->{_soundmode} != 0){
                 @{$rah_places} = sort { $b->{detected_left} <=> $a->{detected_left}    or 
                                         $b->{detected_right} <=> $a->{detected_right}    or 
                                         $a->{distance} <=> $b->{distance} 
@@ -162,7 +168,19 @@ package ns_loopit{
             }
             if ($rah_places){
                 my @do;
-                if ($this->{_stereo}){
+                if ($this->{_soundmode} == 2){
+                    foreach my $rh_pl (@{$rah_places}){
+                        if ($rh_pl->{detected_left} || $rh_pl->{detected_right}){
+                            print "$rh_pl->{permission_id} detected! Left $rh_pl->{detected_left}. Right $rh_pl->{detected_right}.\n\n";
+                            push @do, $rh_pl;
+                        }
+                    }
+                    if (@do){
+                        $this->{_aud}->LDDBsonicSig($this->{_maxdist}, $this->{_maxyear}, \@do);
+                    }else{
+                        $this->{_aud}->resetSonicSig;
+                    }
+                }elsif ($this->{_soundmode} == 1){
                     foreach my $rh_pl (@{$rah_places}){
                         if ($rh_pl->{detected_left} || $rh_pl->{detected_right}){
                             print "$rh_pl->{permission_id} detected! Left $rh_pl->{detected_left}. Right $rh_pl->{detected_right}.\n\n";
@@ -174,7 +192,11 @@ package ns_loopit{
                             push @do, $rh_do;
                         }
                     }
-                    $this->{_aud}->LDDBpercussStereo($this->{_maxdist}, \@do);
+                    if (@do){
+                        my $size = @do;
+                        print "$size detected items\n";
+                        $this->{_aud}->LDDBpercussStereo($this->{_maxdist}, \@do);
+                    }
                 }else{
                     foreach my $rh_pl (@{$rah_places}){
                         if ($rh_pl->{detected}){
@@ -187,7 +209,8 @@ package ns_loopit{
                     }
                     $this->{_aud}->LDDBpercussBasic2($this->{_maxdist}, \@do);
                 }
-                
+            }elsif ($this->{_soundmode} == 2){
+                $this->{_aud}->resetSonicSig; 
             }
         }
     }
@@ -232,6 +255,7 @@ package ns_loopit{
                             $sql->{ra_fields} = ["SUM(erl.number_of_units) AS existingSocialHousing", "SUM(prl.number_of_units) AS proposedSocialHousing"];
                             $sql->{from} = " LEFT JOIN app_ldd.ld_exist_res_lines AS erl ON p.permission_id = erl.permission_id ) " .
                                            " LEFT JOIN app_ldd.ld_prop_res_lines AS prl ON p.permission_id = prl.permission_id ";
+                            $sql->{where} = " AND (erl.tenure_type_rc = 'S' OR prl.tenure_type_rc = 'S') ";
                             $sql->{having} = " AND ((SUM(prl.number_of_units) - SUM(erl.number_of_units)) $this->{_val}) ";
                         }
             case ("osi"){
@@ -241,7 +265,7 @@ package ns_loopit{
                             $sql->{having} = " AND ((SUM(psl.area) - SUM(esl.area)) $this->{_val}) ";
                         }
             case ("textsearch"){
-                            $sql->{where} =  " AND (descr LIKE '%$this->{_val}')";
+                            $sql->{where} =  " AND (p.descr ILIKE '%" . $this->{_val} . "%') " ;
                         }
         }
         return $sql;
@@ -291,22 +315,28 @@ package ns_loopit{
 #        my @groupby = ("lon", "lat", "p.completed_date", "p.permission_id");
 
         #first we have to do a view that limits what we are looking at, so we don't have to do complicated polygon calcs on the whole DB!
-        my $groupby = "lon, lat, p.completed_date, p.permission_id, p.status_rc";
-        my $field = "COUNT(prl_super.permission_id) AS branches, $groupby";
+        my $groupby = "lon, lat, p.completed_date, p.permission_id, p.status_rc, exist_res_units_yn, proposed_res_units_yn, exist_non_res_use_yn, proposed_non_res_use_yn";
+        my $field = "COUNT(prl_super.permission_id) AS branches, $groupby, date_part('year', p.permission_date) AS permissionyear, date_part('year', p.completed_date) AS completedyear ";
         foreach my $f (@{$rh_sc->{ra_fields}}){ $field .= ", $f";}
         my $from = " (((app_ldd.ld_permissions AS p LEFT JOIN app_ldd.ns_permlatlon AS ll ON p.permission_id=ll.permission_id) " . 
                     "LEFT JOIN app_ldd.ld_prop_res_lines AS prl_super ON p.permission_id=prl_super.superseded_permission_id) " . $rh_sc->{from};
         my $where =  " WHERE (lon BETWEEN $lon{min} AND $lon{max}) AND " .
                      "(lat BETWEEN $lat{min} AND $lat{max}) " . 
-                      $dateCondition;
+                      $dateCondition . $rh_sc->{where};
         my $having = " HAVING COUNT(prl_super.permission_id) = 0 " . $rh_sc->{having} ;
+        print "dropping existing view...\n";
         my $sv = $this->{_db}->runsql_rtnSuccessOnly("DROP VIEW IF EXISTS app_ldd.v_perm_widerarea;");
+        print "creating view...\n";
         my $sql = "CREATE VIEW app_ldd.v_perm_widerarea AS SELECT $field FROM $from $where GROUP BY $groupby $having;";
+        print $sql;
         my $sq = $this->{_db}->runsql_rtnSuccessOnly($sql);
         #print "$sql\n";
         my $ra_geofield = $this->setupPlaceGeoFields($rh_loc);
         # Now we go on to the polygon calcs
-        my @fields = ("lat", "lon", "completed_date", "permission_id", "status_rc");
+        my @fields = ("lat", "lon", "completed_date", "permission_id", "status_rc",               
+                      "permissionyear", "completedyear", "exist_res_units_yn",
+                      "proposed_res_units_yn", "exist_non_res_use_yn", "proposed_non_res_use_yn"
+                     );
         push @fields, @{$ra_geofield};
         $from = "app_ldd.v_perm_widerarea AS v INNER JOIN app_ldd.nsll_ld_permissions_geo AS geo ON v.permission_id=geo.objectid";
         $where = "";
@@ -316,15 +346,17 @@ package ns_loopit{
 #                    groupbys=>\(),
                     having=>"",
                     orderby=>"");
+        print "running final query...\n";
         my $rah = $this->{_db}->runSqlHash_rtnAoHRef(\%sqlhash, 1);
         #$this->{_testtools}->printRefArrayOfHashes($rah);
+        print "done\n";
         return $rah;
     }
 
     sub setupPlaceGeoFields{
         my ($this, $rh_loc) = @_;
         my @geofield;
-        if ($this->{_stereo}){
+        if ($this->{_soundmode} != 0){
             my @listenPolys = ($this->{_telem}->prepPolyCo($rh_loc, $this->{_listenshapeLeft}),
                               $this->{_telem}->prepPolyCo($rh_loc, $this->{_listenshapeRight}));
             my @poly;
