@@ -102,13 +102,14 @@ package ns_loopit{
 
     sub LDDBpercussDemoIt{
         my $this = shift;
-        my @fn = ("digtest1.o", "digtest2.o", "digtest3.o", "digtestPause.o");
-        my $beats = int(rand(4));
+        #my @fn = ("digtest1.o", "digtest2.o", "digtest3.o", "digtestPause.o");
+        my @fn = ("pwmtest1.o", "pwmtest3.o");
+        my $beats = int(rand(2));
         my $size = @fn;
         for(my $i=0; $i<$beats+1; $i++){
             my $f = int(rand($size));
-            system "cp /home/pi/nsdata/gpio/$fn[$f] /home/pi/nsdata/gpio/dig1.o";
-            system "cp /home/pi/nsdata/gpio/$fn[$f] /home/pi/nsdata/gpio/dig2.o"
+            system "cp /home/pi/nsdata/gpio/$fn[$f] /home/pi/nsdata/gpio/pwm1.o";
+            system "cp /home/pi/nsdata/gpio/$fn[$f] /home/pi/nsdata/gpio/pwm2.o"
         }
         sleep($beats*2);
     }
