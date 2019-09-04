@@ -196,7 +196,7 @@ package ns_dbinterface;
               $groupby . 
               $r_barrel->{having} . 
 			  $r_barrel->{orderby} . ";";
-    print "$sql\n";
+#    print "$sql\n";
 		my $query = $this->{dbh}->prepare($sql);
     $query->execute;		
 		my $num_fields = @{$r_barrel->{fields}};

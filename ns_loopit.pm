@@ -328,7 +328,7 @@ package ns_loopit{
         my $sv = $this->{_db}->runsql_rtnSuccessOnly("DROP VIEW IF EXISTS app_ldd.v_perm_widerarea;");
         print "creating view...\n";
         my $sql = "CREATE VIEW app_ldd.v_perm_widerarea AS SELECT $field FROM $from $where GROUP BY $groupby $having;";
-        print $sql;
+#        print $sql;
         my $sq = $this->{_db}->runsql_rtnSuccessOnly($sql);
         #print "$sql\n";
         my $ra_geofield = $this->setupPlaceGeoFields($rh_loc);

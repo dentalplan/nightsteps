@@ -15,8 +15,10 @@ from collections import deque
 #########################################################################
 pwm = [PWMOutputDevice(12), PWMOutputDevice(13)]
 state = [0,0]
+magnetic = [True,True,False]
 #look in the following files for instructions
 filepath = ["/home/pi/nsdata/gpio/pwm1.o", "/home/pi/nsdata/gpio/pwm2.o"]
+statepath = ["/home/pi/nsdata/gpio/mag3.s", "/home/pi/nsdata/gpio/mag4.s"]
 #make two double ended queues for instructions
 instruction = [deque(['s']), deque(['s'])]
 for instr in instruction:
@@ -26,7 +28,7 @@ def getInstrFromFile(fileName):
 
     with open(fileName) as f:
         lines = deque (f.read().splitlines())
-        print "lines read\n"
+#        print "lines read\n"
         return lines
 
 def processInstr(newInstr, instr):
@@ -37,13 +39,13 @@ def processInstr(newInstr, instr):
         ni.rstrip()
         if (ni == 'q' or ni == 'i'):
             mode = ni
-            print "found q"
+#            print "found q"
         elif (ni == 't'):
             instr.clear()
             mode = 'q'
         elif (mode == 'q'):
             instr.append(ni)
-            print "appended\n"
+#            print "appended\n"
         elif (mode == 'i'):
             instr.appendleft(ni)            
     return instr
@@ -64,9 +66,18 @@ while True:
             if (matchObjSetVal):
  #               print "matched high"
                 valint = int(matchObjSetVal.group(1))
-                valfl = float(valint) / 10
-                print "setting pwm to " + str(valfl)
-                pwm[i].value = valfl      
+                if valint != state[i]:
+                    state[i] = valint 
+                    valfl = float(valint) / 10
+                    if magnetic[i]:
+                        magval = "0"
+                        if valint > 0:
+                             magval = "1"
+                        with open(statepath[i], "w") as s:
+                            s.write(magval)
+                            s.close()
+#                    print "setting pwm to " + str(valfl)
+                    pwm[i].value = valfl      
                 millis = int(matchObjSetVal.group(2)) - 1
                 if (millis > 0):
                     ni = 'o' + str(valint) + "-" + str(millis)

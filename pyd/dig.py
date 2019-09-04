@@ -20,7 +20,7 @@ state = [0,0,0]
 magnetic = [True,True,False]
 #look in the following files for instructions
 filepath = ["/home/pi/nsdata/gpio/dig1.o", "/home/pi/nsdata/gpio/dig2.o", "/home/pi/nsdata/gpio/dig3.o"]
-statepath = ["/home/pi/nsdata/gpio/mag1.s", "/home/pi/nsdata/gpio/mag2.s", "/home/pi/nsdata/gpio/mag3.s"]
+statepath = ["/home/pi/nsdata/gpio/mag1.s", "/home/pi/nsdata/gpio/mag2.s", "/home/pi/nsdata/gpio/mag5.s"]
 #make two double ended queues for instructions, one for eeach of the digital outs
 queuedInstruction = [deque(['s']), deque(['s']), deque(['s'])]
 activeInstruction = [deque(['s']), deque(['s']), deque(['s'])]
@@ -37,7 +37,7 @@ def getInstrFromFile(fileName):
 
     with open(fileName) as f:
         lines = deque (f.read().splitlines())
-        print "lines read\n"
+#        print "instructions received\n"
         return lines
 
 def processInstr(newInstr, instr):
@@ -81,7 +81,7 @@ while True:
                             s.write("1")
                             s.close()
                     digOut[i].on()
-                    print str(i) + " on\n"
+ #                   print str(i) + " on\n"
                 millis = int(matchObjHigh.group(1)) - 1
                 if (millis > 0):
                     ni = 'h' + str(millis)
@@ -95,7 +95,7 @@ while True:
                         with open(statepath[i], "w") as s:
                             s.write("0")
                             s.close()
-                    print str(i) + "off\n"
+  #                  print str(i) + "off\n"
                 millis = int(matchObjLow.group(1)) - 1
                 if (millis > 0):
                     ni = 'l' + str(millis)
