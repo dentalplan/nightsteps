@@ -80,7 +80,7 @@ package ns_gpio{
         my $newValue = ((($oldValue - $oldMin) * $newRange) / $oldRange) + $newMin;
         my $newDate = DateTime->new(year => $ld->year, month => $ld->month, day => $ld->day);
         $newDate->add(days => int($newValue)); 
-        print "low date is now $this->{_drp}->{lowDate}\n";
+#        print "low date is now $this->{_drp}->{lowDate}\n";
         return $newDate;
 #        return $newDate;
     }

@@ -22,5 +22,5 @@ my $dr = ns_gpio->newDateRange(\%dateRangeProperties);
 while(1){
     my $rh = $dr->readDateRange;
     print "state: $rh->{state}, topdate: $rh->{top}, btmdate: $rh->{btm}\n";
-    usleep(100);
+    usleep(50000);
 }
