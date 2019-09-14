@@ -34,8 +34,8 @@ my @dateScale = (
 my %dateRangeProperties = (
         btmPin => 5,
         topPin => 6,
-        lowDate => DateTime->new(year=>2004, month=>1, day=>1),
-        highDate => DateTime->new(year=>2019, month=>7, day=>1),
+        lowDate => DateTime->new(year=>2007, month=>8, day=>31),
+        highDate => DateTime->new(year=>2019, month=>9, day=>1),
         valScale => \@dateScale
     );
 my $dr = ns_gpio->newDateRange(\%dateRangeProperties);
