@@ -10,7 +10,6 @@ package ns_gpio{
                     _mode => shift,
                     _channel => shift,
                     _datapath => '/home/pi/nsdata/gpio/',
-                    _compassadjust => 100
                     };
         if ($this->{_mode} eq 'a'){
             $this->{_presReadings} = {'','','','','','','',''};
@@ -181,7 +180,6 @@ package ns_gpio{
                 $out = $1;
 	      		}
         }
-        $out += $this->{_compassadjust};
         if ($out > 360){
             $out -= 360;
         }
