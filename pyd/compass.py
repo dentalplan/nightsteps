@@ -6,10 +6,14 @@ compass = mag3110.compass()
 #compass.calibrate()
 compass.loadCalibration()
 c = 0
-filestocheck = 2
+filestocheck = 4
 state = 1
 waitct = 0
 waitmax = 6
+adjustfile = open(path + 'compassadjust.0', "r")
+adjtxt = adjustfile.read()
+adjust = int(adjtxt)
+
 
 def checkMagState():
     rtn = False
@@ -22,7 +26,8 @@ def checkMagState():
             s.close()
         except:
             print "no mag file " + str(i)
-    return rtn 
+    return rtn
+ 
 while True:
     f = open(path + '0.c', 'w')
     print >> f, str(c) 
@@ -33,7 +38,11 @@ while True:
             mag = checkMagState()
             if mag == False:
                 if state == 1:
-                    c = compass.getCompenstatedBearing()
+                    #c = compass.getCompenstatedBearing()
+                    c = compass.getBearing()
+                    c += adjust
+                    if c >= 360:
+                        c -= 360
                     print >> f, str(c)
                 else:
                     if waitct >= waitmax:
