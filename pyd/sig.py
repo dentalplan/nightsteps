@@ -7,13 +7,6 @@ from collections import deque
 #########################################################################
 # instruction | behaviour                                               #
 #-------------|---------------------------------------------------------#
-#  l          | Set output to low for number of miliseconds (e.g l500)  #
-#  h          | Set output to high for number of miliseconds (e.g. h200)#
-#  q          | Append following instructions to end of queue           #
-#  t          | Reset the queue, and go straight to the new instructions#
-#  t          | Add following instructions to beginning of queue        #
-#-----------------------------------------------------------------------#
-#########################################################################
 
 #digOut = [DigitalOutputDevice(5), DigitalOutputDevice(6)]
 pwm = [PWMOutputDevice(12), PWMOutputDevice(13)]
@@ -30,19 +23,22 @@ filepath = ["/home/pi/nsdata/gpio/sig_r.o", "/home/pi/nsdata/gpio/sig_l.o"] #, "
 statepath = ["/home/pi/nsdata/gpio/mag1.s", "/home/pi/nsdata/gpio/mag2.s"] #, "/home/pi/nsdata/gpio/mag3.s"]
 #make two double ended queues for instructions, one for eeach of the digital outs
 #queuedInstruction = [deque(['s']), deque(['s']), deque(['s'])]
-activeInstruction = [deque(['s']), deque(['s'])]#, deque(['s'])]
+activeInstruction = [0, 0]#, deque(['s'])]
 for sp in statepath:
     with open(sp, "w") as s:
         s.write("0")
         s.close()
-for instr in activeInstruction:
-    instr.clear()
+#for instr in activeInstruction:
+#    instr.clear()
 
-def getInstrFromFile(fileName):
+def getInstrFromFile(fileName, i):
     with open(fileName) as f:
         lines = deque (f.read().splitlines())
+        if len(lines) > 0:
 #        print "lines read\n"
-        return lines
+            return lines[i]
+        else:
+            return -1
 
 def getSpeedDivFromFile(fileName):
     with open(fileName) as f:
@@ -61,15 +57,15 @@ while True:
     speedDivider = getSpeedDivFromFile(speedDivPath)
     tempo = beat/speedDivider
     for f in range(0, len(filepath)):
-        activeInstruction[f] = getInstrFromFile(filepath[f])
-        instrSize[f] = len(activeInstruction[f])
+        activeInstruction[f] = getInstrFromFile(filepath[f], i)
+        #instrSize[f] = len(activeInstruction[f])
 #        print "Instr Size " + str(f) + " is " +  str(instrSize[f])
-        if instrSize[f] > 0:
+        if activeInstruction[f] >= 0:
 #            print "File " + str(f) + " of " + str(len(filepath)) + "; instr " + str(i) + " of " + str(instrSize[f])
-            activeInstruction[f][i] = float(activeInstruction[f][i])
-            if activeInstruction[f][i] > ((beat/5.0) * 3.0):
+            activeInstruction[f] = float(activeInstruction[f])
+            if activeInstruction[f] > ((beat/5.0) * 3.0):
 #                print "instr too high"
-                activeInstruction[f][i] = (beat/5.0) * 3.0
+                activeInstruction[f] = (beat/5.0) * 3.0
     
     t = tempo
     #print tempo
@@ -77,7 +73,7 @@ while True:
 #            print t
         for f in range(0, len(filepath)):
             if i < instrSize[f]:
-                o = activeInstruction[f][i]/speedDivider
+                o = activeInstruction[f]/speedDivider
                 #print o
                 if t > (tempo - o) and (state[f] == 0):
                         state[f] = 1.0
@@ -106,7 +102,7 @@ while True:
 
 ########################################################:
 #        print "working with " + str(i)
-#    if (state == 0):
+#    if (state == 0):/acti
 #        state = 1
 #        sol.on()
 #        sleep(0.2)
