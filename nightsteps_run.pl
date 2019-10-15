@@ -17,7 +17,7 @@ my @listenshape_l = ([-6,-6], [-35,75], [-10,80], [10, 80], [15,70], [0,-8], [-6
 my @listenshape_r = ([0,-8], [15,70], [10,80], [-10, 80], [30,75], [6,-6], [0,-8]);
 my $maxdist = 85;
 my $switch1 = ns_gpio->new('a', 7);
-my $sm = 1;
+my $sm = 2;
 my @switchbands = (
     {low=>60, high=>95, logic=>'LDDBpercussDemo', version=>'main', val=>'', sm=>$sm},
     {low=>135, high=>165, logic=>'LDDBpercuss2', version=>'textsearch', val=>'change of use', sm=>$sm},

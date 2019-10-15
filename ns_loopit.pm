@@ -157,63 +157,88 @@ package ns_loopit{
             print "GPS success!\n";
             my $DLen = $this->{_telem}->getDegreeToMetre($rh_loc);
             my $rah_places = $this->LDDBprepPolygonPlaces($rh_loc, $DLen);
-            if ($this->{_soundmode} != 0){
-                @{$rah_places} = sort { $b->{detected_left} <=> $a->{detected_left}    or 
-                                        $b->{detected_right} <=> $a->{detected_right}    or 
-                                        $a->{distance} <=> $b->{distance} 
-                                      } @{$rah_places};
-            }else{
-                @{$rah_places} = sort { $b->{detected} <=> $a->{detected}    or 
-                                        $a->{distance} <=> $b->{distance} 
-                                      } @{$rah_places};
-            }
+            $this->LDDBpipSortDataset($rah_places);
             if ($rah_places){
-                my @do;
                 if ($this->{_soundmode} == 2){
-                    foreach my $rh_pl (@{$rah_places}){
-                        if ($rh_pl->{detected_left} || $rh_pl->{detected_right}){
-                            print "$rh_pl->{permission_id} detected! Left $rh_pl->{detected_left}. Right $rh_pl->{detected_right}.\n\n";
-                            push @do, $rh_pl;
-                        }
-                    }
-                    if (@do){
-                        $this->{_aud}->LDDBsonicSig($this->{_maxdist}, $this->{_maxyear}, \@do);
-                    }else{
-                        $this->{_aud}->resetSonicSig;
-                    }
+                    $this->LDDBpipSigSound($rah_places)
                 }elsif ($this->{_soundmode} == 1){
-                    foreach my $rh_pl (@{$rah_places}){
-                        if ($rh_pl->{detected_left} || $rh_pl->{detected_right}){
-                            print "$rh_pl->{permission_id} detected! Left $rh_pl->{detected_left}. Right $rh_pl->{detected_right}.\n\n";
-                            my $rh_do = {
-                                            dist => $rh_pl->{distance},
-                                            l => $rh_pl->{detected_left}, 
-                                            r => $rh_pl->{detected_right} 
-                            };
-                            push @do, $rh_do;
-                        }
-                    }
-                    if (@do){
-                        my $size = @do;
-                        print "$size detected items\n";
-                        $this->{_aud}->LDDBpercussStereo($this->{_maxdist}, \@do);
-                    }
+                    $this->LDDBpipPercussChunkStereo($rah_places)
                 }else{
-                    foreach my $rh_pl (@{$rah_places}){
-                        if ($rh_pl->{detected}){
-                            print "detected detected!\n\n";
-                            my $rh_do = {
-                                            dist => $rh_pl->{distance},
-                            };
-                            push @do, $rh_do;
-                        }
-                    }
-                    $this->{_aud}->LDDBpercussBasic2($this->{_maxdist}, \@do);
+                    $this->LDDBpipPercussChunkMono($rah_places)
                 }
             }elsif ($this->{_soundmode} == 2){
                 $this->{_aud}->resetSonicSig; 
             }
+        }elsif ($this->{_soundmode} == 2){
+            $this->{_aud}->resetSonicSig; 
         }
+    }
+
+    sub LDDBpipSortDataset{
+        my ($this, $rah_places) = @_;
+        if ($this->{_soundmode} != 0){
+            @{$rah_places} = sort { $b->{detected_left} <=> $a->{detected_left}    or 
+                                    $b->{detected_right} <=> $a->{detected_right}    or 
+                                    $a->{distance} <=> $b->{distance} 
+                                  } @{$rah_places};
+        }else{
+            @{$rah_places} = sort { $b->{detected} <=> $a->{detected}    or 
+                                    $a->{distance} <=> $b->{distance} 
+                                  } @{$rah_places};
+        }
+    }
+
+    sub LDDBpipSigSound{
+        my ($this, $rah_places) = @_;
+        my @do;
+        foreach my $rh_pl (@{$rah_places}){
+            if ($rh_pl->{detected_left} || $rh_pl->{detected_right}){
+                print "$rh_pl->{permission_id} detected! Left $rh_pl->{detected_left}. Right $rh_pl->{detected_right}. Distance is $rh_pl->{distance}\n\n";
+                push @do, $rh_pl;
+            }
+        }
+        if (@do){
+            $this->{_aud}->LDDBsonicSig($this->{_maxdist}, $this->{_maxyear}, \@do);
+        }else{
+            $this->{_aud}->resetSonicSig;
+        }
+
+    }
+    
+    sub LDDBpipPercussChunkStereo{
+        my ($this, $rah_places) = @_;
+        my @do;
+        foreach my $rh_pl (@{$rah_places}){
+            if ($rh_pl->{detected_left} || $rh_pl->{detected_right}){
+                print "$rh_pl->{permission_id} detected! Left $rh_pl->{detected_left}. Right $rh_pl->{detected_right}.\n\n";
+                my $rh_do = {
+                                dist => $rh_pl->{distance},
+                                l => $rh_pl->{detected_left}, 
+                                r => $rh_pl->{detected_right} 
+                };
+                push @do, $rh_do;
+            }
+        }
+        if (@do){
+            my $size = @do;
+            print "$size detected items\n";
+            $this->{_aud}->LDDBpercussStereo($this->{_maxdist}, \@do);
+        }
+    }
+
+    sub LDDBpipPercussChunkMono{
+        my ($this, $rah_places) = @_;
+        my @do;
+        foreach my $rh_pl (@{$rah_places}){
+            if ($rh_pl->{detected}){
+                print "detected detected!\n\n";
+                my $rh_do = {
+                                dist => $rh_pl->{distance},
+                };
+                push @do, $rh_do;
+            }
+        }
+        $this->{_aud}->LDDBpercussBasic2($this->{_maxdist}, \@do);
     }
 
     sub LDDBcreateDateCondition{
