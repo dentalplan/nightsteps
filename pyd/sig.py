@@ -23,7 +23,7 @@ filepath = ["/home/pi/nsdata/gpio/sig_r.o", "/home/pi/nsdata/gpio/sig_l.o"] #, "
 statepath = ["/home/pi/nsdata/gpio/mag1.s", "/home/pi/nsdata/gpio/mag2.s"] #, "/home/pi/nsdata/gpio/mag3.s"]
 #make two double ended queues for instructions, one for eeach of the digital outs
 #queuedInstruction = [deque(['s']), deque(['s']), deque(['s'])]
-activeInstruction = [0, 0]#, deque(['s'])]
+activeInstruction = [{'force':0, 'dur':0}, {'force':0, 'dur':0}]#, deque(['s'])]
 for sp in statepath:
     with open(sp, "w") as s:
         s.write("0")
@@ -36,9 +36,10 @@ def getInstrFromFile(fileName, i):
         lines = deque (f.read().splitlines())
         if len(lines) > 0:
 #        print "lines read\n"
-            return lines[i]
+            instr = {'force': 100.0, 'dur': float(lines[i])} 
         else:
-            return -1
+            instr = {'force': 0.0, 'dur': -1.0} 
+        return instr
 
 def getSpeedDivFromFile(fileName):
     with open(fileName) as f:
@@ -60,12 +61,11 @@ while True:
         activeInstruction[f] = getInstrFromFile(filepath[f], i)
         #instrSize[f] = len(activeInstruction[f])
 #        print "Instr Size " + str(f) + " is " +  str(instrSize[f])
-        if activeInstruction[f] >= 0:
+        if activeInstruction[f]['dur'] >= 0.0:
 #            print "File " + str(f) + " of " + str(len(filepath)) + "; instr " + str(i) + " of " + str(instrSize[f])
-            activeInstruction[f] = float(activeInstruction[f])
-            if activeInstruction[f] > ((beat/5.0) * 3.0):
+            if activeInstruction[f]['dur'] > ((beat/5.0) * 3.0):
 #                print "instr too high"
-                activeInstruction[f] = (beat/5.0) * 3.0
+                activeInstruction[f]['dur'] = (beat/5.0) * 3.0
     
     t = tempo
     #print tempo
@@ -73,7 +73,7 @@ while True:
 #            print t
         for f in range(0, len(filepath)):
             if i < instrSize[f]:
-                o = activeInstruction[f]/speedDivider
+                o = activeInstruction[f]['dur']/speedDivider
                 #print o
                 if t > (tempo - o) and (state[f] == 0):
                         state[f] = 1.0
@@ -82,7 +82,7 @@ while True:
                             with open(statepath[f], "w") as s:
                                 s.write("1")
                                 s.close()
-                        pwm[f].value = 1
+                        pwm[f].value = activeInstruction[f]['force']/100
                         #print str(f) + " ON\n"
                 elif t <= (tempo - o) and (state[f] == 1):
                         state[f] = 0

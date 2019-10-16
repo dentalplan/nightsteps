@@ -143,6 +143,16 @@ package ns_audinterface{
          
     }
 
+    sub generateEmptySig{
+        my $this = shift;
+        my @ra;
+        for (my $i=0; $i<21; $i++){
+            my %instr = (force=>0, dur=>0);
+            push @ra, \%instr;
+        }
+        return \@ra;
+    }
+
     sub resetSonicSig{
         my $this = shift;
         my $ral = [0,0,0,0,0,0,0,0,0,0,
