@@ -171,7 +171,7 @@ package ns_dbinterface;
 		my $fields = $this->unpackFields_rtnStr($r_barrel->{fields});
     my @keyfield;
     if ($ascheck){
-      print "Performing AS check\n";
+    #  print "Performing AS check\n";
       foreach my $f (@{$r_barrel->{fields}}){
           if($f =~ m/(.+) AS (.*)/){
               my $as = $2;
@@ -181,7 +181,7 @@ package ns_dbinterface;
               push @keyfield, $f;
           }
       }
-      print "AS check complete\n";
+    #  print "AS check complete\n";
     }
     my $groupby = "";
     if ($r_barrel->{groupbys}){

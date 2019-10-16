@@ -350,9 +350,9 @@ package ns_loopit{
                      "(lat BETWEEN $lat{min} AND $lat{max}) " . 
                       $dateCondition . $rh_sc->{where};
         my $having = " HAVING COUNT(prl_super.permission_id) = 0 " . $rh_sc->{having} ;
-        print "dropping existing view...\n";
+        #print "dropping existing view...\n";
         my $sv = $this->{_db}->runsql_rtnSuccessOnly("DROP VIEW IF EXISTS app_ldd.v_perm_widerarea;");
-        print "creating view...\n";
+        #print "creating view...\n";
         my $sql = "CREATE VIEW app_ldd.v_perm_widerarea AS SELECT $field FROM $from $where GROUP BY $groupby $having;";
 #        print $sql;
         my $sq = $this->{_db}->runsql_rtnSuccessOnly($sql);
@@ -372,10 +372,10 @@ package ns_loopit{
 #                    groupbys=>\(),
                     having=>"",
                     orderby=>"");
-        print "running final query...\n";
+        #print "running final query...\n";
         my $rah = $this->{_db}->runSqlHash_rtnAoHRef(\%sqlhash, 1);
         #$this->{_testtools}->printRefArrayOfHashes($rah);
-        print "done\n";
+        #print "done\n";
         return $rah;
     }
 

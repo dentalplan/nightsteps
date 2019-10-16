@@ -153,18 +153,27 @@ package ns_audinterface{
         return \@ra;
     }
 
+    sub convertAoHtoInstrText{
+        my ($this, $rah) = @_;
+        my @ra;
+        foreach my $rh (@{$rah}){
+            my $s = "o$rh->{force}-$rh->{dur}";
+            push @ra, $s
+        }
+        return \@ra;
+    }
+
+
     sub resetSonicSig{
         my $this = shift;
-        my $ral = [0,0,0,0,0,0,0,0,0,0,
-                   0,0,0,0,0,0,0,0,0,0,
-                   0];
-        my $rar = [0,0,0,0,0,0,0,0,0,0,
-                   0,0,0,0,0,0,0,0,0,0,
-                   0];
+        my $ral = $this->generateEmptySig;
+        my $rar = $this->generateEmptySig;
         my $filel = $this->{_gpoutpath} . "sig_l.o";
         my $filer = $this->{_gpoutpath} . "sig_r.o";
-        $this->physSendInstructions($filel, $ral);
-        $this->physSendInstructions($filer, $rar);
+        my $ralt = $this->convertAoHtoInstrText($ral);
+        my $rart = $this->convertAoHtoInstrText($rar);
+        $this->physSendInstructions($filel, $ralt);
+        $this->physSendInstructions($filer, $rart);
     }
 
     sub LDDBsonicSig{
@@ -172,36 +181,39 @@ package ns_audinterface{
         my $size = @{$rah_do};
         # these arrays will be written into the sig_l and sig_r files to be picked
         # up by the noisemakers
-        my $ral = [0,0,0,0,0,0,0,0,0,0,
-                   0,0,0,0,0,0,0,0,0,0,
-                   0];
-        my $rar = [0,0,0,0,0,0,0,0,0,0,
-                   0,0,0,0,0,0,0,0,0,0,
-                   0];
+        my $ral = $this->generateEmptySig;
+        my $rar = $this->generateEmptySig;
         my $closestdistance = $maxdist;
         for (my $i=0; $i<$size; $i++){
             my @arrset;
+            my $offCentreDistAdd = 20;
             # we only need to adjustments to for applications that are detected.
             if ($rah_do->[$i]->{detected_left}){
                 push @arrset, $ral;
+                $offCentreDistAdd -= 10; 
             }
             if ($rah_do->[$i]->{detected_right}){
                 push @arrset, $rar;
+                $offCentreDistAdd -= 10; 
             }
             if ($rah_do->[$i]->{detected_left} && $rah_do->[$i]->{detected_right} && $rah_do->[$i]->{distance} < $closestdistance){
                 $closestdistance = $rah_do->[$i]->{distance};
             }
-#            my $cap = 16 - int(($rah_do->[$i]->{distance}/$maxdist) * 16);
             #one way the device indicates distance is by blanking out elemetns of the signal until you are
             # close enough
-            my $cap = 16 - ($this->getDistanceRatio($rah_do->[$i]->{distance}, $maxdist, 10, 0) * 16);
-#            my $da = int(($rah_do->[$i]->{distance}/$maxdist) * 5);
+            my $cap = 16 - int($this->getDistanceRatio($rah_do->[$i]->{distance}, $maxdist, 10, 0) * 16);
             # Another is to increase the force of the 
-            my $da = -2 + int($this->getDistanceRatio($rah_do->[$i]->{distance}, $maxdist, 5, 1) * 7);
+            my $da = -2 + int($this->getDistanceRatio($rah_do->[$i]->{distance} + $offCentreDistAdd, $maxdist + 10, 5, 1) * 7);
+            my $df = int($this->getDistanceRatio($rah_do->[$i]->{distance}, $maxdist, 4, 1) * 40);
             for (my $k=0; $k<$cap; $k++){
-                my $rh_beat = $this->makeBeatData($rah_do->[$i], $k, $da, $maxyear);
+                my $rh_beat = $this->makeBeatData($rah_do->[$i], $k, $da, $df, $maxyear);
                 foreach my $ra (@arrset){
-                   $ra->[$rh_beat->{pos}] += $rh_beat->{in};
+                   $ra->[$rh_beat->{pos}]->{dur} += $rh_beat->{in};
+                   if ($rh_beat->{force} > 0 && $ra->[$rh_beat->{pos}]->{force} == 0){
+                       $ra->[$rh_beat->{pos}]->{force} += 45 + $rh_beat->{force};
+                   }else{
+                       $ra->[$rh_beat->{pos}]->{force} += $rh_beat->{force};
+                   }
                 }
             }
             foreach my $ra (@arrset){
@@ -210,9 +222,11 @@ package ns_audinterface{
         }
         my $filel = $this->{_gpoutpath} . "sig_l.o";
         my $filer = $this->{_gpoutpath} . "sig_r.o";
+        my $ralt = $this->convertAoHtoInstrText($ral);
+        my $rart = $this->convertAoHtoInstrText($rar);
         $this->setSpeedDivider($closestdistance, $maxdist);
-        $this->physSendInstructions($filel, $ral);
-        $this->physSendInstructions($filer, $rar);
+        $this->physSendInstructions($filel, $ralt);
+        $this->physSendInstructions($filer, $rart);
     }
 
     sub setSpeedDivider{
@@ -220,7 +234,7 @@ package ns_audinterface{
         my $file = $this->{_gpoutpath} . "sig_speeddiv.o";
         my $base = 700;
         my $diffdist = $maxdist - $distance;
-        my $ra_distadd = [$base + ($diffdist * 4)];
+        my $ra_distadd = [int($base + ($diffdist * 4))];
         $this->physSendInstructions($file, $ra_distadd);
     }
 
@@ -233,7 +247,7 @@ package ns_audinterface{
         } 
         my $diffDistAdj = $useDist * ($useDist/$curve + ($curve*2));
         my $maxDistAdj = $maxdist * ($maxdist/$curve + ($curve*2));
-        my $ratio = int($diffDistAdj/$maxDistAdj);
+        my $ratio = $diffDistAdj/$maxDistAdj;
         return $ratio;
     }
 
@@ -242,19 +256,21 @@ package ns_audinterface{
         my @number = split( //,$id);
         my $size = @number;
         for (my $i=0; $i<($size-1); $i++){
-            print "number $number[$i]\n";
+            #print "number $number[$i]\n";
             my $pos = $number[$i] + $number[$i+1];
-            print "Examing position $pos\n";
-            if ($ra->[$pos] > 0){
-                print "Adding to $pos";
-                $ra->[$pos]++;
+            #print "Examing position $pos\n";
+            if ($ra->[$pos]->{dur} > 0){
+                #print "Adding to $pos";
+                $ra->[$pos]->{dur}++;
+                $ra->[$pos]->{force}++;
             }
         }
     }
     
     sub makeBeatData{
-        my ($this, $rh, $i, $da, $maxyear) = @_;
+        my ($this, $rh, $i, $da, $df, $maxyear) = @_;
         my $rtn;
+        #print "Setting up distance-dur: $da, distance-force: $df\n";
         switch($i){
             case 0  {   #permission date beat 
                       my $pos = 15;
@@ -263,83 +279,93 @@ package ns_audinterface{
                       }elsif ($rh->{permissionyear} > ($maxyear - 10)){
                           my $pos = 9;
                       }
-                      $rtn = {pos=>$pos, in=>11 + $da};
+                      $rtn = {pos=>$pos, in=>11 + $da, force=>$df};
                   }
             case 1  {   #not yet completed beat 1
-                        $rtn = {pos=>7, in=>0};
+                        $rtn = {pos=>7, in=>0, force=>0};
                         if ($rh->{status_rc} eq "STARTED" || $rh->{status_rc} eq "SUBMITTED" || $rh->{status_rc} eq "PENDING"){
                             $rtn->{in} = 11 + $da;
+                            $rtn->{force} = $df;
                         }
                     }
             case 2  {   #standard distance beat
-                        $rtn = {pos=>19, in=>7 + $da};
+                        $rtn = {pos=>19, in=>7 + $da, force=>$df};
                     }
             case 3  {   #completed beat 1
-                        $rtn = {pos=>18, in=>0};
+                        $rtn = {pos=>18, in=>0, force=>0};
                         if ($rh->{status_rc} eq "COMPLETED"){
                             $rtn->{in} = 9 + $da;
+                            $rtn->{force} = $df;
                         }
                     }
             case 4  {   #when completed beat
                         my $pos = 17;
                         my $in = 0;
+                        my $force = 0;
                         if ($rh->{status_rc} eq "COMPLETED"){
                             $in = 9 + $da;
+                            $force = $df;
                             if ($rh->{completedyear} > ($maxyear - 5)){
                                 my $pos = 5;
                             }elsif ($rh->{completedyear} > ($maxyear - 10)){
                                 my $pos = 11;
                             }
                         }
-                        $rtn = {pos=>$pos, in=>$in};
+                        $rtn = {pos=>$pos, in=>$in, force=>$df};
                     }
             case 5  {   #standard distance beat
-                        $rtn = {pos=>16, in=>7 + $da};
+                        $rtn = {pos=>16, in=>7 + $da, force=>$df};
                     }
             case 6  {   #residential units beat 1
-                        $rtn = {pos=>10, in=>0};
+                        $rtn = {pos=>10, in=>0, force=>0};
                         if ($rh->{exist_res_units_yn} eq "Y"){
                             $rtn->{in} = 5 + $da;
+                            $rtn->{force} = $df;
                         }
                     }
             case 7  {   #non-res use beat 1
-                        $rtn = {pos=>13, in=>0};
+                        $rtn = {pos=>13, in=>0, force=>$df};
                         if ($rh->{exist_non_res_use_yn} eq "Y"){
                             $rtn->{in} = 5 + $da;
+                            $rtn->{force} = $df;
                         }
                     }
             case 8  {   #standard distnace beat
-                        $rtn = {pos=>12, in=>7 + $da}
+                        $rtn = {pos=>12, in=>7 + $da, force => $df}
                     }
             case 9  {   #residential units beat 1 
-                        $rtn = {pos=>1, in=>0};
+                        $rtn = {pos=>1, in=>0, force=>0};
                         if ($rh->{proposed_res_units_yn} eq "Y"){
                             $rtn->{in} = 5 + $da;
+                            $rtn->{force} = $df;
                         }
                     }
             case 10  {  #non-res use beat 2
-                        $rtn = {pos=>6, in=>0};
+                        $rtn = {pos=>6, in=>0, force=>0};
                         if ($rh->{proposed_non_res_use_yn} eq "Y"){
                             $rtn->{in} = 5 + $da;
+                            $rtn->{force} = $df;
                         }
                      }
             case 11  {  #standard distance beat
-                        $rtn = {pos=>8, in=>7 + $da}
+                        $rtn = {pos=>8, in=>7 + $da, force=>$df}
                      }
             case 12  {
-                        $rtn = {pos=>2, in=>0};
+                        $rtn = {pos=>2, in=>0, force=>0};
                         if ($rh->{status_rc} eq "STARTED" || $rh->{status_rc} eq "SUBMITTED"){
                             $rtn->{in} = 11 + $da;
+                            $rtn->{force} = $df;
                         }
                      }
-            case 13  {  $rtn = {pos=>4, in=>7 + $da} }
+            case 13  {  $rtn = {pos=>4, in=>7 + $da, force=>$df} }
             case 14  {
-                        $rtn = {pos=>14, in=>0};
+                        $rtn = {pos=>14, in=>0, force=>$df};
                         if ($rh->{status_rc} eq "COMPLETED"){
                             $rtn->{in} = 9 + $da;
+                            $rtn->{force} = $df;
                         }
                      }
-            case 15  {  $rtn = {pos=>0, in=>7 + $da} }
+            case 15  {  $rtn = {pos=>0, in=>7 + $da, force=>$df} }
         }
         return $rtn
     }

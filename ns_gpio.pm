@@ -66,6 +66,7 @@ package ns_gpio{
         }
         $rtn->{state} =  $rtn->{ta} + ($rtn->{ba} * 3); #this creates a unique 0-6 scale for each state, though states 2 and 5 are impossible
                                                         #due to physical constraint
+        print "Date Range - $rtn->{state}; Top: $rtn->{top}; Btm: $rtn->{btm}\n";
         return $rtn;
     }
 

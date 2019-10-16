@@ -36,7 +36,13 @@ def getInstrFromFile(fileName, i):
         lines = deque (f.read().splitlines())
         if len(lines) > 0:
 #        print "lines read\n"
-            instr = {'force': 100.0, 'dur': float(lines[i])} 
+            match = re.match(r'o(\d+)-(\d+)', lines[i], re.M|re.I)
+            if match:
+                force = float(match.group(1))
+                dur  = float(match.group(2))
+                instr = {'force': force, 'dur': dur} 
+            else:
+                instr = {'force': 0.0, 'dur': -1.0} 
         else:
             instr = {'force': 0.0, 'dur': -1.0} 
         return instr
@@ -64,9 +70,9 @@ while True:
         if activeInstruction[f]['dur'] >= 0.0:
 #            print "File " + str(f) + " of " + str(len(filepath)) + "; instr " + str(i) + " of " + str(instrSize[f])
             if activeInstruction[f]['dur'] > ((beat/5.0) * 3.0):
-#                print "instr too high"
                 activeInstruction[f]['dur'] = (beat/5.0) * 3.0
-    
+            if activeInstruction[f]['force'] > 100:
+                activeInstruction[f]['force'] = 100
     t = tempo
     #print tempo
     while (t > 0.0):
