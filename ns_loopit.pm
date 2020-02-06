@@ -35,6 +35,8 @@ package ns_loopit{
             _soundmode => $rh->{soundmode},
             _version => $rh->{version},
             _maxdist => $rh->{maxdist},
+            _statuslightfile => '/home/pi/nsdata/gpio/dig1.o',
+            _datalightfile => '/home/pi/nsdata/gpio/dig2.o',
             _testtools => ns_testtools->new,
             _telem => ns_telemetry->new,
 #            _gpio => ns_gpio->new,
@@ -159,6 +161,9 @@ package ns_loopit{
             my $rah_places = $this->LDDBprepPolygonPlaces($rh_loc, $DLen);
             $this->LDDBpipSortDataset($rah_places);
             if ($rah_places){
+                print "sending data light signal\n";
+                my @datalight = ("q", "h100", "l100");
+                $this->{_aud}->physSendInstructions($this->{_datalightfile}, \@datalight);
                 if ($this->{_soundmode} == 2){
                     $this->LDDBpipSigSound($rah_places)
                 }elsif ($this->{_soundmode} == 1){
@@ -166,11 +171,21 @@ package ns_loopit{
                 }else{
                     $this->LDDBpipPercussChunkMono($rah_places)
                 }
-            }elsif ($this->{_soundmode} == 2){
-                $this->{_aud}->resetSonicSig; 
+            }else{
+                if ($this->{_soundmode} == 2){
+                    $this->{_aud}->resetSonicSig; 
+                }
+                print "sending data light signal\n";
+                my @datalight = ("q", "h25","l25","h25", "l100");
+                $this->{_aud}->physSendInstructions($this->{_datalightfile}, \@datalight);
             }
+            my @statuslight = ("t", "h1500", "l1");
+            $this->{_aud}->physSendInstructions($this->{_statuslightfile}, \@statuslight);
         }elsif ($this->{_soundmode} == 2){
             $this->{_aud}->resetSonicSig; 
+            my @statuslight = ("t", "h150", "l100", "h50", "l100");
+            print "sending status light signal\n";
+            $this->{_aud}->physSendInstructions($this->{_statuslightfile}, \@statuslight);
         }
     }
 
