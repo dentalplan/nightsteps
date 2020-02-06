@@ -15,15 +15,15 @@ from collections import deque
 #-----------------------------------------------------------------------#
 #########################################################################
 
-digOut = [DigitalOutputDevice(5), DigitalOutputDevice(6), DigitalOutputDevice(17)]
-state = [0,0,0]
-magnetic = [True,True,False]
+digOut = [DigitalOutputDevice(27), DigitalOutputDevice(22)]
+state = [0,0]
+magnetic = [False,False]
 #look in the following files for instructions
-filepath = ["/home/pi/nsdata/gpio/dig1.o", "/home/pi/nsdata/gpio/dig2.o", "/home/pi/nsdata/gpio/dig3.o"]
-statepath = ["/home/pi/nsdata/gpio/mag1.s", "/home/pi/nsdata/gpio/mag2.s", "/home/pi/nsdata/gpio/mag5.s"]
+filepath = ["/home/pi/nsdata/gpio/dig1.o", "/home/pi/nsdata/gpio/dig2.o"]
+statepath = ["/home/pi/nsdata/gpio/mag1.s", "/home/pi/nsdata/gpio/mag2.s"]
 #make two double ended queues for instructions, one for eeach of the digital outs
-queuedInstruction = [deque(['s']), deque(['s']), deque(['s'])]
-activeInstruction = [deque(['s']), deque(['s']), deque(['s'])]
+queuedInstruction = [deque(['s']), deque(['s'])]
+activeInstruction = [deque(['s']), deque(['s'])]
 for sp in statepath:
     with open(sp, "w") as s:
         s.write("0")
@@ -60,20 +60,21 @@ def processInstr(newInstr, instr):
     return instr
 
 ##main loop
+oldtimemillis = int(round(time.time() * 1000))
 while True:
-
     # Cycle through the two instruction sets.
+    nowtimemillis = int(round(time.time() * 1000))
+    gap = nowtimemillis - oldtimemillis
     for i in range(0,len(activeInstruction)):
 #        print "working with " + str(i)
-
         if (len(activeInstruction[i]) > 0):
             l = len(activeInstruction[i])
-  #          print "We have " + str(l) + " instructions \n" 
+            #print "We have " + str(l) + " instructions \n" 
             mi = activeInstruction[i].popleft()
             matchObjHigh = re.match(r'h(\d+)', mi, re.M|re.I)
             matchObjLow = re.match(r'l(\d+)', mi, re.M|re.I)
             if (matchObjHigh):
- #               print "matched high"
+                #print "matched high"
                 if (state[i] == 0):
                     state[i] = 1
                     if magnetic[i]:
@@ -81,13 +82,13 @@ while True:
                             s.write("1")
                             s.close()
                     digOut[i].on()
- #                   print str(i) + " on\n"
-                millis = int(matchObjHigh.group(1)) - 1
+                    #print str(i) + " on\n"
+                millis = int(matchObjHigh.group(1)) - gap
                 if (millis > 0):
                     ni = 'h' + str(millis)
                     activeInstruction[i].appendleft(ni)
             if (matchObjLow):
-  #              print "matched low"
+                #print "matched low"
                 if (state[i] == 1):
                     state[i] = 0
                     digOut[i].off()
@@ -95,17 +96,18 @@ while True:
                         with open(statepath[i], "w") as s:
                             s.write("0")
                             s.close()
-  #                  print str(i) + "off\n"
-                millis = int(matchObjLow.group(1)) - 1
+                    #print str(i) + "off\n"
+                millis = int(matchObjLow.group(1)) - gap
                 if (millis > 0):
                     ni = 'l' + str(millis)
                     activeInstruction[i].appendleft(ni)
         elif (os.path.exists(filepath[i])):
                 newInstr = getInstrFromFile(filepath[i])
-#                print "removing file\n"
+                #print "removing file\n"
                 os.remove(filepath[i])
                 activeInstruction[i] = processInstr(newInstr, activeInstruction[i])
-    time.sleep(0.001)
+    oldtimemillis = nowtimemillis
+    time.sleep(0.005)
 
 #    if (state == 0):
 #        state = 1

@@ -232,9 +232,9 @@ package ns_audinterface{
     sub setSpeedDivider{
         my ($this, $distance, $maxdist) = @_;
         my $file = $this->{_gpoutpath} . "sig_speeddiv.o";
-        my $base = 700;
+        my $base = 270; # was 700
         my $diffdist = $maxdist - $distance;
-        my $ra_distadd = [int($base + ($diffdist * 4))];
+        my $ra_distadd = [int($base + ($diffdist * 3))]; # was * 4
         $this->physSendInstructions($file, $ra_distadd);
     }
 

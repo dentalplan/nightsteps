@@ -40,18 +40,18 @@ ck5=$(ps aux | grep /home/pi/nightsteps/pyd/sig.py | grep -v grep | wc -l)
 echo $ck5
 if [ $ck5 -eq 0 ]
 then
-    echo 'init dig out'
+    echo 'init sig out'
 #    python /home/pi/nightsteps/pyd/dig.py &
     python /home/pi/nightsteps/pyd/sig.py &
 fi
 
-#ck6=$(ps aux | grep /home/pi/nightsteps/pyd/pwm.py | grep -v grep | wc -l)
-#echo $ck6
-#if [ $ck6 -eq 0 ]
-#then
-#    echo 'init pmw'
-#    python /home/pi/nightsteps/pyd/pwm.py &
-#fi
+ck6=$(ps aux | grep /home/pi/nightsteps/pyd/dig.py | grep -v grep | wc -l)
+echo $ck6
+if [ $ck6 -eq 0 ]
+then
+    echo 'init dig out'
+    python /home/pi/nightsteps/pyd/dig.py &
+fi
 
 echo "all done"
 	

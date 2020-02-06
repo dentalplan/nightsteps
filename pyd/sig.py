@@ -1,4 +1,5 @@
 from gpiozero import PWMOutputDevice
+from gpiozero import DigitalOutputDevice
 import os
 import time
 import re
@@ -9,21 +10,22 @@ from collections import deque
 #-------------|---------------------------------------------------------#
 
 #digOut = [DigitalOutputDevice(5), DigitalOutputDevice(6)]
-pwm = [PWMOutputDevice(12), PWMOutputDevice(13)]
+out = [PWMOutputDevice(12), PWMOutputDevice(13), DigitalOutputDevice(23)]
+outType = ["pwm","pwm","dig"]
 state = [0,0,0]
-beat = float(70)
-baseSpeedDiv = float(700)
+basebeat = float(70)
+baseSpeedDiv = float(70)
 speedDivider = baseSpeedDiv 
-tempo = beat/speedDivider
+beatlength = basebeat/speedDivider
 magnetic = [True,True,False]
 compassPaused = False
 #look in the following files for instructions
 speedDivPath = "/home/pi/nsdata/gpio/sig_speeddiv.o"
-filepath = ["/home/pi/nsdata/gpio/sig_r.o", "/home/pi/nsdata/gpio/sig_l.o"] #, "/home/pi/nsdata/gpio/sig_i.o"]
+filepath = ["/home/pi/nsdata/gpio/sig_r.o", "/home/pi/nsdata/gpio/sig_l.o", "/home/pi/nsdata/gpio/sig_i.o"] #, "/home/pi/nsdata/gpio/sig_i.o"]
 statepath = ["/home/pi/nsdata/gpio/mag1.s", "/home/pi/nsdata/gpio/mag2.s"] #, "/home/pi/nsdata/gpio/mag3.s"]
 #make two double ended queues for instructions, one for eeach of the digital outs
 #queuedInstruction = [deque(['s']), deque(['s']), deque(['s'])]
-activeInstruction = [{'force':0, 'dur':0}, {'force':0, 'dur':0}]#, deque(['s'])]
+activeInstruction = [{'force':0, 'dur':0}, {'force':0, 'dur':0}, {'force':0, 'dur':0}]#, deque(['s'])]
 for sp in statepath:
     with open(sp, "w") as s:
         s.write("0")
@@ -56,51 +58,55 @@ def getSpeedDivFromFile(fileName):
             return baseSpeedDiv
 
 i = 0
-instrSize = [20,20]
+instrSize = [20,20,20]
 while True:
-    # Cycle through  two instruction sets.
-#        print "now on " + str(i)       
-#    print "i is " + str(i) 
-    speedDivider = getSpeedDivFromFile(speedDivPath)
-    tempo = beat/speedDivider
-    for f in range(0, len(filepath)):
+    speedDivider = getSpeedDivFromFile(speedDivPath) # Get the present 'SpeedDiv' file - higher numbers = faster.
+    beatlength = basebeat/speedDivider               # The beatlength here is the base 'beat' value divider by the speed div - this is how 
+                                                     # | many seconds the beat will last
+    for f in range(0, len(filepath)):                # It's time to check to see if there are any new rhythm instructions in each designated filepath
         activeInstruction[f] = getInstrFromFile(filepath[f], i)
-        #instrSize[f] = len(activeInstruction[f])
-#        print "Instr Size " + str(f) + " is " +  str(instrSize[f])
         if activeInstruction[f]['dur'] >= 0.0:
-#            print "File " + str(f) + " of " + str(len(filepath)) + "; instr " + str(i) + " of " + str(instrSize[f])
-            if activeInstruction[f]['dur'] > ((beat/5.0) * 3.0):
-                activeInstruction[f]['dur'] = (beat/5.0) * 3.0
-            if activeInstruction[f]['force'] > 100:
-                activeInstruction[f]['force'] = 100
-    t = tempo
-    #print tempo
+            if activeInstruction[f]['dur'] > ((basebeat/5.0) * 3.0):  # Strikes on the solenoid are restricted to 3/5s of the beat. If they
+                activeInstruction[f]['dur'] = (basebeat/5.0) * 3.0    # | go over this then it changed to 3/5.
+            if activeInstruction[f]['force'] > 100:               # Likewise, strikes should not have more than 100% force
+                activeInstruction[f]['force'] = 100       
+    t = beatlength                                       # The value t is set to the whole duration of a standard beat
+    lasttime = time.time() 
     while (t > 0.0):
-#            print t
         for f in range(0, len(filepath)):
             if i < instrSize[f]:
-                o = activeInstruction[f]['dur']/speedDivider
-                #print o
-                if t > (tempo - o) and (state[f] == 0):
+                strikelength = activeInstruction[f]['dur']/speedDivider
+                if t > (beatlength - strikelength) and (state[f] == 0):
                         state[f] = 1.0
                         if magnetic[f] and compassPaused == False:
                             compassPaused = True
                             with open(statepath[f], "w") as s:
                                 s.write("1")
                                 s.close()
-                        pwm[f].value = activeInstruction[f]['force']/100
-                        #print str(f) + " ON\n"
-                elif t <= (tempo - o) and (state[f] == 1):
+                        if outType[f] == "pwm":
+                            out[f].value = activeInstruction[f]['force']/100
+                        elif outType[f] == "dig":
+                            if activeInstruction[f]['force'] > 0:
+                                out[f].on() 
+                            else: out[f].off()
+                elif t <= (beatlength - strikelength) and (state[f] == 1):
                         state[f] = 0
-                        pwm[f].value = 0.0
+                        if outType[f] == "pwm":
+                            out[f].value = 0.0
+                        elif outType[f] == "dig":
+                            out[f].off()
                         if magnetic[f] and compassPaused:
                             compassPaused = False
                             with open(statepath[f], "w") as s:
                                 s.write("0")
                                 s.close()
                         #print str(f) + "OFF\n"
-        t -= 0.001
-        time.sleep(0.001)
+        nowtime = time.time() 
+        gap = nowtime - lasttime
+        t -= gap
+        lasttime = nowtime
+        #print "now: " +str(nowtime) + " before: " + str(lasttime) + " t: " + str(t)
+        time.sleep(0.005)
     i += 1
     for f in range (0, len(filepath)):
         if i >= instrSize[f]:
