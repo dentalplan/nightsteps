@@ -14,7 +14,7 @@ out = [PWMOutputDevice(12), PWMOutputDevice(13), DigitalOutputDevice(23)]
 outType = ["pwm","pwm","dig"]
 state = [0,0,0]
 basebeat = float(70)
-baseSpeedDiv = float(70)
+baseSpeedDiv = float(270)
 speedDivider = baseSpeedDiv 
 beatlength = basebeat/speedDivider
 magnetic = [True,True,False]
@@ -52,8 +52,9 @@ def getInstrFromFile(fileName, i):
 def getSpeedDivFromFile(fileName):
     with open(fileName) as f:
         line = f.read()
-        if (line > baseSpeedDiv): 
-            return float(line)
+        rtn = float(line)
+        if (rtn > baseSpeedDiv): 
+            return rtn
         else:
             return baseSpeedDiv
 
