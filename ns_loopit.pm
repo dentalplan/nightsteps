@@ -46,10 +46,10 @@ package ns_loopit{
             _t => Time::Piece->new,      
         };
         print "sound mode $this->{_soundmode} \n";
+        my @time = localtime(time);
         if ($this->{_soundmode} != 0){
             $this->{_listenshapeLeft} = $rh->{listenshapeLeft};
             $this->{_listenshapeRight} = $rh->{listenshapeRight};
-            my @time = localtime(time);
             my $year = $time[5] + 1900;
             print "present year is $year";
             $this->{_maxyear} = $year;
@@ -58,7 +58,7 @@ package ns_loopit{
         }
 
         bless $this, $class;
-        $this->{_logger} = ns_logger->new($this);
+        $this->{_logger} = ns_logger->new($this, \@time);
         $this->loopitSetup;
         return $this;
     }
@@ -77,19 +77,11 @@ package ns_loopit{
             case "LDDBpercuss1"{ $this->LDDBpercussIt}
             case "LDDBpercuss2"{ $this->LDDBpercussItPoly}
             case "LDDBpercussDemo"{ $this->LDDBpercussDemoIt}
-            case "dataLogger" { $this->dataLoggerIt }
         }
-    }
-
-
-    ######################################################
-    ### Logger Block  ######################################
-    
-    sub dataLoggerIt{
-        my $this = shift;
         $this->{_logger}->logData;
     }
-    
+
+
     ######################################################
     ### LDDB Block  ######################################
 

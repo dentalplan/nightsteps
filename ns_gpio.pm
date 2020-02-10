@@ -25,7 +25,8 @@ package ns_gpio{
         my $this = {
                     _mode => 'dr',  
                     _datapath => '/home/pi/nsdata/gpio/',
-                    _drp => $rh
+                    _drp => $rh,
+                    _drlog => {state => '', tr => '', br => ''}
                    };
         bless $this, $class;
         return $this;
@@ -67,6 +68,7 @@ package ns_gpio{
         $rtn->{state} =  $rtn->{ta} + ($rtn->{ba} * 3); #this creates a unique 0-6 scale for each state, though states 2 and 5 are impossible
                                                         #due to physical constraint
         print "Date Range - $rtn->{state}; Top: $rtn->{top}; Btm: $rtn->{btm}\n";
+        $this->{_drlog} = {state => $rtn->{state}, tr => $rtn->{top}, br => $rtn->{btm}};
         return $rtn;
     }
 

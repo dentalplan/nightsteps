@@ -8,15 +8,16 @@ package ns_logger{
         my $this = {
             _loop => shift,
         };
+        my $rh_time = shift;
         my $i = 0;
-        my $fname = "/home/pi/nsdata/log/log" . (sprintf("%05d",$i)) . ".txt";
+        my $fname = "/home/pi/nsdata/log/log$rh_time->[5]-$rh_time->[4]-$rh_time->[3]__$rh_time->[2]-$rh_time->[1]" . (sprintf("%05d",$i)) . ".txt";
         while (-f $fname) {
             $fname = "/home/pi/nsdata/log/log" . (sprintf("%05d",++$i)) . ".txt";
         }
         $this->{_logfile} = $fname;
         open LOG, ">>$this->{_logfile}" or die $!;
-        print LOG "logic: $this->{_loop}->{_logic}\n";
-        print LOG '"time","gpstime","lat","lon","compass","a0","a1","a2,"a3","a4","a5","a6","a7",' . "\n";
+#        print LOG "logic: $this->{_loop}->{_logic}\n";
+        print LOG '"time","gpstime","lat","lon","compass","daterange_state","daterange_upper","daterange_lower, "logicsound", "sniffversion", "sniffvalue"' . "\n";
         close LOG;
         bless $this, $class;
         return $this; 
@@ -24,17 +25,16 @@ package ns_logger{
 
     sub logData{
         my $this = shift;
+        print "logging data\n";
         my $rhGPS = $this->{_loop}->{_telem}->{_presPosition};
+        my $rhDateRange = $this->{_loop}->{_daterange}->{_drlog};
 #        my $time = $this->{_loop}->{_t}->datetime;
         my $time = localtime;
-        my $raSensor = $this->{_loop}->{_gpio}->{presReadings};
         open LOG, ">>$this->{_logfile}" or die $!;
         print LOG "$time,";
         print LOG "$rhGPS->{time},$rhGPS->{lat},$rhGPS->{lon},$rhGPS->{course},";
-        foreach my $s (@{$raSensor}){
-            print LOG "$s,";
-#            print "putting $s in record\n";
-        }
+        print LOG "$rhDateRange->{state},$rhDateRange->{tr},$rhDateRange->{br},";
+        print LOG "$this->{_loop}->{_logic}, $this->{_loop}->{_version}, $this->{_loop}->{_val}";
         print LOG "\n";
         close LOG;
     }

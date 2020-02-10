@@ -2,6 +2,8 @@
 
 echo "yo planet!"
 
+/opt/vc/bin/tvservice -o #powers off hdmi
+
 ck1=$(ps aux | grep /home/pi/nsdata/metagps.pl | grep -v grep | wc -l)
 echo $ck1
 if [ $ck1 -eq 0 ]
@@ -33,6 +35,8 @@ then
     echo 'init nightsteps'
     log=$(date +nslog-%y%m%d-%H%M.txt)
     perl /home/pi/nightsteps/nightsteps_run.pl>/home/pi/nsdata/syslog/$log &
+    cp /home/pi/nsdata/gpio/dig_startlights.o /home/pi/nsdata/gpio/dig1.o &
+    cp /home/pi/nsdata/gpio/dig_startlights.o /home/pi/nsdata/gpio/dig2.o &
 fi
 
 #ck5=$(ps aux | grep /home/pi/nightsteps/pyd/dig.py | grep -v grep | wc -l)
@@ -52,6 +56,7 @@ then
     echo 'init dig out'
     python /home/pi/nightsteps/pyd/dig.py &
 fi
+
 
 echo "all done"
 	

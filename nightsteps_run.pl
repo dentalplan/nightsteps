@@ -67,7 +67,6 @@ for (my $i=0;;$i++){
             $it->loopitSetup;
         }
     }
-    $it->{_logger}->logData();
     $it->iterate;
     usleep(20000);
     if ($i==1500){
