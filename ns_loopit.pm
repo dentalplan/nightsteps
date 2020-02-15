@@ -37,6 +37,7 @@ package ns_loopit{
             _maxdist => $rh->{maxdist},
             _statuslightfile => '/home/pi/nsdata/gpio/dig1.o',
             _datalightfile => '/home/pi/nsdata/gpio/dig2.o',
+            _lastdataset => {viewcount=>0, viewIDs=>{}, detectcount=>0, detectcount_l=>0, detectcount_r=>0, detectIDs_l=>{}, detectcount_r=>{}},
             _testtools => ns_testtools->new,
             _telem => ns_telemetry->new,
 #            _gpio => ns_gpio->new,
@@ -204,6 +205,7 @@ package ns_loopit{
                 push @do, $rh_pl;
             }
         }
+        $this->{_lastdataset}->{datacount} = @do;
         if (@do){
             $this->{_aud}->LDDBsonicSig($this->{_maxdist}, $this->{_maxyear}, \@do);
         }else{
@@ -364,6 +366,9 @@ package ns_loopit{
 #        print $sql;
         my $sq = $this->{_db}->runsql_rtnSuccessOnly($sql);
         #print "$sql\n";
+        $sql = "SELECT COUNT(permission_id) FROM app_ldd.v_perm_widerarea";
+        $this->{_lastdataset}->{viewcount} = $this->{_db}->runsql_rtnScalar($sql);
+        print "$this->{_lastdataset}->{viewcount} in view \n"; 
         my $ra_geofield = $this->setupPlaceGeoFields($rh_loc);
         # Now we go on to the polygon calcs
         my @fields = ("lat", "lon", "completed_date", "permission_id", "status_rc",               
