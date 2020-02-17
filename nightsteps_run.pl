@@ -19,12 +19,12 @@ my $maxdist = 85;
 my $switch1 = ns_gpio->new('a', 7);
 my $sm = 2;
 my @switchbands = (
-    {low=>60, high=>110, logic=>'LDDBpercussDemo', version=>'main', val=>'', sm=>$sm},
-    {low=>135, high=>190, logic=>'LDDBpercuss2', version=>'textsearch', val=>'change of use', sm=>$sm},
-    {low=>250, high=>340, logic=>'LDDBpercuss2', version=>'textsearch', val=>'demoli', sm=>$sm},
-    {low=>410, high=>490, logic=>'LDDBpercuss2', version=>'shi', val=>'<= -1', sm=>$sm},
-    {low=>590, high=>750, logic=>'LDDBpercuss2', version=>'shi', val=>'>= 1', sm=>$sm},
-    {low=>950, high=>1024, logic=>'LDDBpercuss2', version=>'all', val=>'', sm=>$sm}
+    {low=>35, high=>110, logic=>'LDDBpercussDemo', version=>'main', val=>'', sm=>$sm},
+    {low=>135, high=>200, logic=>'LDDBpercuss2', version=>'textsearch', val=>'change of use', sm=>$sm},
+    {low=>240, high=>350, logic=>'LDDBpercuss2', version=>'textsearch', val=>'demoli', sm=>$sm},
+    {low=>400, high=>500, logic=>'LDDBpercuss2', version=>'shi', val=>'<= -1', sm=>$sm},
+    {low=>580, high=>760, logic=>'LDDBpercuss2', version=>'shi', val=>'>= 1', sm=>$sm},
+    {low=>930, high=>1024, logic=>'LDDBpercuss2', version=>'all', val=>'', sm=>$sm}
     );
 my @dateScale = (
     {low=>0, high=>178, range=>'stillToCome'},
