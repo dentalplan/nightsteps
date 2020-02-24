@@ -40,7 +40,6 @@ package ns_loopit{
             _lastdataset => {viewcount=>0, viewIDs=>{}, detectcount=>0, detectcount_l=>0, detectcount_r=>0, detectIDs_l=>{}, detectcount_r=>{}},
             _testtools => ns_testtools->new,
             _telem => ns_telemetry->new,
-#            _gpio => ns_gpio->new,
             _aud => ns_audinterface->new,
             _db => ns_dbinterface->new,
             _dbfilepath => '/home/pi/nsdata/',
@@ -98,15 +97,17 @@ package ns_loopit{
     sub LDDBpercussDemoIt{
         my $this = shift;
         #my @fn = ("digtest1.o", "digtest2.o", "digtest3.o", "digtestPause.o");
-        my @fn = ("pwmtest1.o", "pwmtest3.o");
-        my $beats = int(rand(2));
-        my $size = @fn;
-        for(my $i=0; $i<$beats+1; $i++){
-            my $f = int(rand($size));
-            system "cp /home/pi/nsdata/gpio/$fn[$f] /home/pi/nsdata/gpio/pwm1.o";
-            system "cp /home/pi/nsdata/gpio/$fn[$f] /home/pi/nsdata/gpio/pwm2.o"
+#        my @fn = ("pwmtest1.o", "pwmtest3.o");
+        my @demotrack = ( {src=>"/home/pi/nsdata/gpio/sig_demo_l.o", dst=>"/home/pi/nsdata/gpio/sig_l.o"},
+                          {src=>"/home/pi/nsdata/gpio/sig_demo_r.o", dst=>"/home/pi/nsdata/gpio/sig_r.o"},
+                          {src=>"/home/pi/nsdata/gpio/sig_demo_speeddiv.o", dst=>"/home/pi/nsdata/gpio/sig_speeddiv.o"},
+                          {src=>"/home/pi/nsdata/gpio/dig1_demo.o", dst=>$this->{_statuslightfile}} );
+        my $size = @demotrack;
+        for(my $i=0; $i<$size; $i++){
+            print "cp $demotrack[$i]->{src} $demotrack[$i]->{dst}";
+            system "cp $demotrack[$i]->{src} $demotrack[$i]->{dst}";
         }
-        sleep($beats*2);
+        sleep(1);
     }
 
     sub LDDBpercussIt{

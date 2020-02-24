@@ -1,5 +1,4 @@
-package ns_dbinterface;
-{
+package ns_dbinterface{
 	use DBI;
 	use strict;
 	use constant FOUND     => 1;
