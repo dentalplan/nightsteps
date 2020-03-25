@@ -18,7 +18,7 @@ package ns_logger{
         }
         $this->{_logfile} = $fname;
         open LOG, ">>$this->{_logfile}" or die $!;
-#        print LOG "logic: $this->{_loop}->{_logic}\n";
+#       print LOG "logic: $this->{_loop}->{_logic}\n";
         print LOG '"time","gpstime","lat","lon","compass","daterange_state","daterange_upper","daterange_lower","logicsound","sniffversion","sniffvalue","viewcount","datacount"' . "\n";
         close LOG;
         bless $this, $class;
