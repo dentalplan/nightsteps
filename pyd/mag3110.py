@@ -18,7 +18,7 @@ class compass(object):
         '''
         self.heading            = 0
         self.busNumber          = 1
-        self.calibrationFile    = '/home/pi/nightsteps/pyd/compass.cal'
+        self.calibrationFile    = '/home/pi/nsdata/compass.cal'
         self.addressCompass     = 0x0E
         # This is the raw min/max for calibration
         self.calibrations       = {'maxX':0,'minX':0,'maxY':0, 'minY':0, 'maxZ':0, 'minZ':0}
