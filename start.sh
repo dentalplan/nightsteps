@@ -4,12 +4,12 @@ echo "yo planet!"
 
 /opt/vc/bin/tvservice -o #powers off hdmi
 
-ck1=$(ps aux | grep /home/pi/nsdata/metagps.pl | grep -v grep | wc -l)
+ck1=$(ps aux | grep /home/pi/nightsteps/gps/metagps.pl | grep -v grep | wc -l)
 echo $ck1
 if [ $ck1 -eq 0 ]
 then
     echo 'init metagps.pl'
-    perl /home/pi/nsdata/metagps.pl &
+    perl /home/pi/nightsteps/gps/metagps.pl &
 fi
 
 ck3=$(ps aux | grep  /home/pi/nightsteps/pyd/gpio-a-all.py | grep -v grep | wc -l)
