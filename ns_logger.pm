@@ -18,8 +18,8 @@ package ns_logger{
         }
         $this->{_logfile} = $fname;
         open LOG, ">>$this->{_logfile}" or die $!;
-#       print LOG "logic: $this->{_loop}->{_logic}\n";
-        print LOG '"time","gpstime","lat","lon","compass","daterange_state","daterange_upper","daterange_lower","logicsound","sniffversion","sniffvalue","viewcount","datacount"' . "\n";
+#        print LOG "logic: $this->{_loop}->{_logic}\n";
+        print LOG '"time","gpstime","lat","lon","compass","daterange_state","daterange_upper","daterange_lower","logicsound","sniffversion","sniffvalue","viewcount","datacount","gpio-a-all.py","compass.py","sig.py","dig.py"' . "\n";
         close LOG;
         bless $this, $class;
         return $this; 
@@ -31,13 +31,28 @@ package ns_logger{
         my $rhGPS = $this->{_loop}->{_telem}->{_presPosition};
         my $rhDateRange = $this->{_loop}->{_daterange}->{_drlog};
 #        my $time = $this->{_loop}->{_t}->datetime;
+        my %daemon = ( "gpio-a-all.py"=>0,
+				                  "compass.py"=>0,
+                          "sig.py"=>0,
+                          "dig.py"=>0);
+        my @nsrun = `ps aux | grep nightsteps`;
+        my @keys = keys %daemon;
+        foreach my $l (@nsrun){
+            foreach my $k(@keys){
+            print $l;
+                if ($l =~ m/$k/){
+                    $daemon{$k} = 1;
+                }
+            }
+        }
         my $time = localtime;
         open (LOG, ">>$this->{_logfile}") or die $!;
         print LOG "$time,";
         print LOG "$rhGPS->{time},$rhGPS->{lat},$rhGPS->{lon},$rhGPS->{course},";
         print LOG "$rhDateRange->{state},$rhDateRange->{tr},$rhDateRange->{br},";
         print LOG "$this->{_loop}->{_logic},$this->{_loop}->{_version},$this->{_loop}->{_val},";
-        print LOG "$this->{_loop}->{_lastdataset}->{viewcount},$this->{_loop}->{_lastdataset}->{datacount}";
+        print LOG "$this->{_loop}->{_lastdataset}->{viewcount},$this->{_loop}->{_lastdataset}->{datacount},";
+        print LOG "$daemon{'gpio-a-all.py'},$daemon{'compass.py'},$daemon{'sig.py'},$daemon{'dig.py'}";
         print LOG "\n";
         close (LOG) or die "Couldn't close file";
     }
