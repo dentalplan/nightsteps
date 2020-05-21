@@ -157,7 +157,7 @@ package ns_audinterface{
         my ($this, $rah) = @_;
         my @ra;
         foreach my $rh (@{$rah}){
-            my $s = "o$rh->{force}-$rh->{dur}";
+            my $s = "f$rh->{force}-d$rh->{dur}";
             push @ra, $s
         }
         return \@ra;
@@ -199,10 +199,10 @@ package ns_audinterface{
             if ($rah_do->[$i]->{detected_left} && $rah_do->[$i]->{detected_right} && $rah_do->[$i]->{distance} < $closestdistance){
                 $closestdistance = $rah_do->[$i]->{distance};
             }
-            #one way the device indicates distance is by blanking out elemetns of the signal until you are
+            #one way the device indicates distance is by blanking out elements of the signal until you are
             # close enough
             my $cap = 16 - int($this->getDistanceRatio($rah_do->[$i]->{distance}, $maxdist, 10, 0) * 16);
-            # Another is to increase the force of the 
+            # Another is to increase the duration and force of the strike
             my $da = -2 + int($this->getDistanceRatio($rah_do->[$i]->{distance} + $offCentreDistAdd, $maxdist + 10, 5, 1) * 7);
             my $df = int($this->getDistanceRatio($rah_do->[$i]->{distance}, $maxdist, 4, 1) * 40);
             for (my $k=0; $k<$cap; $k++){
@@ -330,7 +330,7 @@ package ns_audinterface{
                             $rtn->{force} = $df;
                         }
                     }
-            case 8  {   #standard distnace beat
+            case 8  {   #standard distance beat
                         $rtn = {pos=>12, in=>7 + $da, force => $df}
                     }
             case 9  {   #residential units beat 1 

@@ -66,7 +66,7 @@ package ns_loopit{
     sub loopitSetup{
         my $this = shift;
         switch ($this->{_logic}){
-            case "LDDBpercuss1"{ $this->LDDBpercussSetup}
+#            case "LDDBpercuss1"{ $this->LDDBpercussSetup} this has been removed May 2020
             case "LDDBpercuss2"{ $this->LDDBpercussSetup}
         }
     }
@@ -74,7 +74,7 @@ package ns_loopit{
     sub iterate{
         my $this = shift;
         switch ($this->{_logic}){
-            case "LDDBpercuss1"{ $this->LDDBpercussIt}
+#            case "LDDBpercuss1"{ $this->LDDBpercussIt} this has been removed May 2020
             case "LDDBpercuss2"{ $this->LDDBpercussItPoly}
             case "LDDBpercussDemo"{ $this->LDDBpercussDemoIt}
         }
@@ -107,43 +107,9 @@ package ns_loopit{
             print "cp $demotrack[$i]->{src} $demotrack[$i]->{dst}";
             system "cp $demotrack[$i]->{src} $demotrack[$i]->{dst}";
         }
+        $this->{_lastdataset}->{datacount} = "demo";
+        $this->{_lastdataset}->{viewcount} = "demo";
         sleep(1);
-    }
-
-    sub LDDBpercussIt{
-        my $this = shift;
-        my $rh_loc = $this->{_telem}->readGPS;
-        if ($rh_loc->{success} == 1){
-            print "GPS success!\n";
-            my $DLen = $this->{_telem}->getDegreeToMetre($rh_loc);
-            my $polyco = $this->{_telem}->prepPolyCo($rh_loc, $this->{_listenshape});
-            my $rah_places = $this->LDDBprepPlaces($rh_loc, $DLen);
-            my $c = $this->{_telem}->{_compass}->readValue;
-            if ($rah_places){
-                my @do;
-                foreach my $rh_pl (@{$rah_places}){
-#                    print "$rh_pl->{SAON} $rh_pl->{PAON} $rh_pl->{Street}\n";
-                    if ($this->{_telem}->checkPointIsInShape($rh_pl, $polyco) == 1){
-                        my $l2 = {
-                                    lon => $rh_pl->{lon},
-                                    lat => $rh_pl->{lat}
-                        };
-                        my $absAngle = $this->{_telem}->getPointToPointAngle($rh_loc, $l2);
-                        my $relAngle = $c - $absAngle;
-                        if ($relAngle > 180) {
-                           $relAngle = 360 - $relAngle;
-                        }   
-                        my $rh_do = {
-                                        dist => $this->{_telem}->getDistanceInMetres($rh_loc, $l2),
-                                        angle => $relAngle
-                        };
-#                        print "price is $rh_pl->{Price} vs tune of $pricetune\n";
-                        push @do, $rh_do;
-                    }
-                }
-                $this->{_aud}->LDDBpercussBasic1($this->{_maxdist}, \@do);
-            }
-        }
     }
 
     sub LDDBpercussItPoly{
@@ -151,8 +117,7 @@ package ns_loopit{
         my $rh_loc = $this->{_telem}->readGPS;
         if ($rh_loc->{success} == 1){
             print "GPS success!\n";
-            my $DLen = $this->{_telem}->getDegreeToMetre($rh_loc);
-            my $rah_places = $this->LDDBprepPolygonPlaces($rh_loc, $DLen);
+            my $rah_places = $this->LDDBprepPolygonPlaces($rh_loc);
             $this->LDDBpipSortDataset($rah_places);
             if ($rah_places){
                 print "sending data light signal\n";
@@ -307,39 +272,43 @@ package ns_loopit{
         return $sql;
     }
 
-    sub LDDBprepPlaces{ 
-        my ($this, $rh_loc, $DLen) = @_;
-        my $dateCondition = $this->LDDBcreateDateCondition;
-        my $rh_sc = $this->LDDBcreateSwitchCondition;
-        my $distlon = $this->{_maxdist}/$DLen->{lon};
-        my $distlat = $this->{_maxdist}/$DLen->{lat};
-        my %lon = (min=>$rh_loc->{lon} - $distlon, max=>$rh_loc->{lon} +$distlon) ;
-        my %lat = (min=>$rh_loc->{lat} - $distlat, max=>$rh_loc->{lat} +$distlat) ;
-        my @groupby = ("lon", "lat", "p.completed_date", "permission_date", "permission_lapses_date", "p.permission_id");
-        my @field;
-        push @field, "COUNT(prl_super.permission_id) AS branches";
-        push @field, @groupby;
-        push @field, @{$rh_sc->{ra_fields}};
-        my $having = " HAVING COUNT(prl_super.permission_id) = 0 " . $rh_sc->{having} ;
-        my $from = " (((app_ldd.ld_permissions AS p LEFT JOIN app_ldd.ns_permlatlon AS ll ON p.permission_id=ll.permission_id) " . 
-                    "LEFT JOIN app_ldd.ld_prop_res_lines AS prl_super ON p.permission_id=prl_super.superseded_permission_id) " . $rh_sc->{from};
-        my $where =  " WHERE (lon BETWEEN $lon{min} AND $lon{max}) AND " .
-                     "(lat BETWEEN $lat{min} AND $lat{max}) " . 
-                      $dateCondition;
-        my $orderby = " ORDER BY p.completed_date ";
-        my %sqlhash = ( fields=>\@field,
-                    table=>$from,
-                    where=>$where,
-                    groupbys=>\@groupby,
-                    having=> $having,
-                    orderby=>$orderby);
-        my $rah = $this->{_db}->runSqlHash_rtnAoHRef(\%sqlhash, 0);
-        #$this->{_testtools}->printRefArrayOfHashes($rah);
+    sub LDDBprepPolygonPlaces{
+        my ($this, $rh_loc) = @_;
+        #print "$sql\n";
+        my $viewFormed = $this->LDDBcreateNearbyView($rh_loc);
+        my $rah = [];
+        if ($viewFormed) {
+          my $sql = "SELECT COUNT(permission_id) FROM app_ldd.v_perm_widerarea";
+          $this->{_lastdataset}->{viewcount} = $this->{_db}->runsql_rtnScalar($sql);
+          print "$this->{_lastdataset}->{viewcount} in view \n"; 
+          my $ra_geofield = $this->setupPlaceGeoFields($rh_loc);
+          # Now we go on to the polygon calcs
+          my @fields = ("lat", "lon", "completed_date", "permission_id", "status_rc",               
+                        "permissionyear", "completedyear", "exist_res_units_yn",
+                        "proposed_res_units_yn", "exist_non_res_use_yn", "proposed_non_res_use_yn"
+                       );
+          push @fields, @{$ra_geofield};
+          my $from = "app_ldd.v_perm_widerarea AS v INNER JOIN app_ldd.nsll_ld_permissions_geo AS geo ON v.permission_id=geo.objectid";
+          my $where = "";
+          my %sqlhash = ( fields=>\@fields,
+                      table=>$from,
+                      where=>"",
+  #                    groupbys=>\(),
+                      having=>"",
+                      orderby=>"");
+          #print "running final query...\n";
+          $rah = $this->{_db}->runSqlHash_rtnAoHRef(\%sqlhash, 1);
+          #$this->{_testtools}->printRefArrayOfHashes($rah);
+        }else{
+          print "View formation failed\n";
+        }
+        #print "done\n";
         return $rah;
     }
 
-    sub LDDBprepPolygonPlaces{
-        my ($this, $rh_loc, $DLen) = @_;
+    sub LDDBcreateNearbyView{
+        my ($this, $rh_loc) = @_;
+        my $DLen = $this->{_telem}->getDegreeToMetre($rh_loc);
         my $scoopDist = 600; # this is how far away the points are the sniffer can check. For very large sites, this may cause problems.
         my $dateCondition = $this->LDDBcreateDateCondition;
         my $rh_sc = $this->LDDBcreateSwitchCondition;
@@ -366,30 +335,7 @@ package ns_loopit{
         my $sql = "CREATE VIEW app_ldd.v_perm_widerarea AS SELECT $field FROM $from $where GROUP BY $groupby $having;";
 #        print $sql;
         my $sq = $this->{_db}->runsql_rtnSuccessOnly($sql);
-        #print "$sql\n";
-        $sql = "SELECT COUNT(permission_id) FROM app_ldd.v_perm_widerarea";
-        $this->{_lastdataset}->{viewcount} = $this->{_db}->runsql_rtnScalar($sql);
-        print "$this->{_lastdataset}->{viewcount} in view \n"; 
-        my $ra_geofield = $this->setupPlaceGeoFields($rh_loc);
-        # Now we go on to the polygon calcs
-        my @fields = ("lat", "lon", "completed_date", "permission_id", "status_rc",               
-                      "permissionyear", "completedyear", "exist_res_units_yn",
-                      "proposed_res_units_yn", "exist_non_res_use_yn", "proposed_non_res_use_yn"
-                     );
-        push @fields, @{$ra_geofield};
-        $from = "app_ldd.v_perm_widerarea AS v INNER JOIN app_ldd.nsll_ld_permissions_geo AS geo ON v.permission_id=geo.objectid";
-        $where = "";
-        my %sqlhash = ( fields=>\@fields,
-                    table=>$from,
-                    where=>"",
-#                    groupbys=>\(),
-                    having=>"",
-                    orderby=>"");
-        #print "running final query...\n";
-        my $rah = $this->{_db}->runSqlHash_rtnAoHRef(\%sqlhash, 1);
-        #$this->{_testtools}->printRefArrayOfHashes($rah);
-        #print "done\n";
-        return $rah;
+        return $sq;
     }
 
     sub setupPlaceGeoFields{
