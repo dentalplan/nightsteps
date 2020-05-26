@@ -144,10 +144,10 @@ package ns_audinterface{
     }
 
     sub generateEmptySig{
-        my $this = shift;
+        my ($this, $siglen) = @_;
         my @ra;
-        for (my $i=0; $i<21; $i++){
-            my %instr = (force=>0, dur=>0);
+        for (my $i=0; $i<$siglen; $i++){
+            my %instr = (force=>0, dur=>0, fmod=>0, dvar=>0, syp=>0);
             push @ra, \%instr;
         }
         return \@ra;
@@ -166,8 +166,8 @@ package ns_audinterface{
 
     sub resetSonicSig{
         my $this = shift;
-        my $ral = $this->generateEmptySig;
-        my $rar = $this->generateEmptySig;
+        my $ral = $this->generateEmptySig(21);
+        my $rar = $this->generateEmptySig(21);
         my $filel = $this->{_gpoutpath} . "sig_l.o";
         my $filer = $this->{_gpoutpath} . "sig_r.o";
         my $ralt = $this->convertAoHtoInstrText($ral);
@@ -181,8 +181,8 @@ package ns_audinterface{
         my $size = @{$rah_do};
         # these arrays will be written into the sig_l and sig_r files to be picked
         # up by the noisemakers
-        my $ral = $this->generateEmptySig;
-        my $rar = $this->generateEmptySig;
+        my $ral = $this->generateEmptySig(21);
+        my $rar = $this->generateEmptySig(21);
         my $closestdistance = $maxdist;
         for (my $i=0; $i<$size; $i++){
             my @arrset;

@@ -51,7 +51,11 @@ package ns_logger{
         print LOG "$rhGPS->{time},$rhGPS->{lat},$rhGPS->{lon},$rhGPS->{course},";
         print LOG "$rhDateRange->{state},$rhDateRange->{tr},$rhDateRange->{br},";
         print LOG "$this->{_loop}->{_logic},$this->{_loop}->{_version},$this->{_loop}->{_val},";
-        print LOG "$this->{_loop}->{_lastdataset}->{viewcount},$this->{_loop}->{_lastdataset}->{datacount},";
+        if ($this->{_loop}->{_lastdataset}->{viewcount}) {
+          print LOG "$this->{_loop}->{_lastdataset}->{viewcount},$this->{_loop}->{_lastdataset}->{datacount},";
+        }else{
+          print LOG '"n/a","n/a"';
+        }
         print LOG "$daemon{'gpio-a-all.py'},$daemon{'compass.py'},$daemon{'sig.py'},$daemon{'dig.py'}";
         print LOG "\n";
         close (LOG) or die "Couldn't close file";
