@@ -1,0 +1,156 @@
+{
+  "databaseName":"ldd",
+  "databaseType":"Pg",
+  "viewQuery":{
+    "viewName":"app_ldd.v_perm_widerarea",
+    "latField":"lat",
+    "lonField":"lon",
+    "keyField":{"table":"p", "name":"permission_id"},
+    "otherGroupbyFields":"p.completed_date, p.status_rc, exist_res_units_yn, proposed_res_units_yn, exist_non_res_use_yn, proposed_non_res_use_yn, exist_open_space_yn, proposed_open_space_yn",
+    "selectOnlyFields":"COUNT(prl_super.permission_id) AS branches, $groupby, date_part('year', p.permission_date) AS permissionyear, date_part('year', p.completed_date) AS completedyear ",
+    "from":"(((app_ldd.ld_permissions AS p LEFT JOIN app_ldd.ns_permlatlon AS ll ON p.permission_id=ll.permission_id) LEFT JOIN app_ldd.ld_prop_res_lines AS prl_super ON p.permission_id=prl_super.superseded_permission_id) ",
+    "having":"HAVING COUNT(prl_super.permission_id) = 0 ",
+    "dateFields":{
+      "dateField":"p.completed_date",
+      "statusField":"p.status_rc",
+      "stillToComeStatuses":["SUBMITTED","STARTED"],
+      "dateRangeStatuses":["COMPLETED"],
+      "mightHaveBeenStatuses":["DELETED","LAPSED"]
+    },
+    "options":{
+      "textsearch-demolitions":{
+        "where":"AND (p.descr ILIKE '%demoli%') "
+      },
+      "textsearch-changeofuse":{
+        "where":"AND (p.descr ILIKE '%change of use%') "
+      },
+      "socialhousing-increase":{
+        "ra_fields":"SUM(erl.number_of_units) AS existingSocialHousing, SUM(prl.number_of_units) AS proposedSocialHousing",
+        "from":" LEFT JOIN app_ldd.ld_exist_res_lines AS erl ON p.permission_id = erl.permission_id ) LEFT JOIN app_ldd.ld_prop_res_lines AS prl ON p.permission_id = prl.permission_id ",
+        "where":" AND (erl.tenure_type_rc = 'S' OR prl.tenure_type_rc = 'S') ",
+        "having":" AND ((SUM(prl.number_of_units) - SUM(erl.number_of_units)) >= 1) "
+      },
+      "socialhousing-decrease":{
+        "ra_fields":"SUM(erl.number_of_units) AS existingSocialHousing, SUM(prl.number_of_units) AS proposedSocialHousing",
+        "from":" LEFT JOIN app_ldd.ld_exist_res_lines AS erl ON p.permission_id = erl.permission_id ) LEFT JOIN app_ldd.ld_prop_res_lines AS prl ON p.permission_id = prl.permission_id ",
+        "where":" AND (erl.tenure_type_rc = 'S' OR prl.tenure_type_rc = 'S') ",
+        "having":" AND ((SUM(prl.number_of_units) - SUM(erl.number_of_units)) <= -1) "
+      },
+      "socialhousing-exists":{
+        "ra_fields":"SUM(erl.number_of_units) AS existingSocialHousing",
+        "from":" LEFT JOIN app_ldd.ld_exist_res_lines AS erl ON p.permission_id = erl.permission_id )",
+        "where":" AND (erl.tenure_type_rc = 'S') ",
+        "having":" AND (SUM(erl.number_of_units)) >= 1) "
+      }
+    }
+  },
+  "geosonQuery":{
+    "polygonField":"the_geom",
+    "pointField":"the_geom_pt",
+    "otherSelectFields":["lat", "lon", 
+                         "completed_date", "permission_id", 
+                         "status_rc", "permissionyear", 
+                         "completedyear", "exist_res_units_yn",
+                         "proposed_res_units_yn", "exist_non_res_use_yn", 
+                        "proposed_non_res_use_yn", "exist_open_space_yn",
+                        "proposed_open_space_yn"],
+    "from":"app_ldd.v_perm_widerarea AS v INNER JOIN app_ldd.nsll_ld_permissions_geo AS geo ON v.permission_id=geo.objectid",
+    "options":{
+      "socialhousing-exists":{
+        "fields":["existingSocialHousing"]
+      }
+    }
+  },
+  "sonification":
+    "beats":20,
+    "rules":[
+      {
+        "test":"{exist_res_units_yn}=='Y'",
+        "action":"descRhythm",
+        "arg":{"repetitions":3,"gap":2},
+        "positions":[0]
+      },
+      {
+        "test":"{proposed_res_units_yn}=='Y'",
+        "action":"ascRhythm",
+        "arg":{"repetitions":3,"gap":2},
+        "positions":[3]
+      },
+      {
+        "test":"{status_rc}=='COMPLETED'",
+        "action":"beat",
+        "arg":{},
+        "positions":[1]
+      },
+      {
+        "test":"{exist_non_res_use_yn}=='Y'",
+        "action":"descRhythm",
+        "arg":{"repetitions":3,"gap":2},
+        "positions":[6]
+      },
+      {
+        "test":"{proposed_non_res_use_yn}=='Y'",
+        "action":"ascRhythm",
+        "arg":{"repetitions":3,"gap":2},
+        "positions":[9]
+      },
+      {
+        "test":"{status_rc}=='SUBMITTED' || {status_rc}=='STARTED'",
+        "action":"beat",
+        "arg":{},
+        "positions":[7]
+      },
+      {
+        "test":"{exist_open_space_yn}=='Y'",
+        "action":"descRhythm",
+        "arg":{"repetitions":3,"gap":2},
+        "positions":[12]
+      },
+      {
+        "test":"{proposed_open_space_yn}=='Y'",
+        "action":"ascRhythm",
+        "arg":{"repetitions":3,"gap":2},
+        "positions":[15]
+      },
+      {
+        "test":"{status_rc}=='SUBMITTED' || {status_rc}=='STARTED'",
+        "action":"destable",
+        "arg":{"strength":20},
+        "positions":[1,3,5,7,9,11,13,15,17,19]
+      },
+      {
+        "test":"{status_rc}=='LAPSED'",
+        "action":"destable",
+        "arg":{"strength":40},
+        "positions":[1,3,5,7,9,11,13,15,17,19]
+      },
+      {
+        "test":"{status_rc}=='LAPSED'",
+        "action":"diminish",
+        "arg":{"strength":15},
+        "positions":[1,3,5,7,9,11,13,15,17,19]
+      },
+      {
+        "test":"{status_rc}=='COMPLETED'",
+        "action":"destable",
+        "arg":{"strength":10},
+        "positions":[0,2,4,6,8,10,12,14,16]
+      },
+      {
+        "test":"{status_rc}=='DELETED'",
+        "action":"destableAll",
+        "arg":{"strength":15},
+        "positions":[0]
+      },
+      {
+        "action":"distanceDiminish",
+        "arg":{}
+      }
+    ],
+    "optionSpecificRules":{
+      "textsearch-demolitions":[
+      ],
+      "textsearch-changeofuse":[
+      ]
+    }
+}
