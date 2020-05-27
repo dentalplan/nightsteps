@@ -39,7 +39,7 @@ package ns_logger{
         my @keys = keys %daemon;
         foreach my $l (@nsrun){
             foreach my $k(@keys){
-            print $l;
+           # print $l;
                 if ($l =~ m/$k/){
                     $daemon{$k} = 1;
                 }
@@ -50,7 +50,8 @@ package ns_logger{
         print LOG "$time,";
         print LOG "$rhGPS->{time},$rhGPS->{lat},$rhGPS->{lon},$rhGPS->{course},";
         print LOG "$rhDateRange->{state},$rhDateRange->{tr},$rhDateRange->{br},";
-        print LOG "$this->{_loop}->{_logic},$this->{_loop}->{_version},$this->{_loop}->{_val},";
+#        print LOG "$this->{_loop}->{_logic},$this->{_loop}->{_version},$this->{_loop}->{_val},";
+        print LOG "$this->{_loop}->{_logic},$this->{_loop}->{_option},,";
         if ($this->{_loop}->{_lastdataset}->{viewcount}) {
           print LOG "$this->{_loop}->{_lastdataset}->{viewcount},$this->{_loop}->{_lastdataset}->{datacount},";
         }else{

@@ -5,13 +5,28 @@ package ns_audinterface{
     use lib ".";
     use Switch;
     use ns_testtools;
+    use ns_audlibrary;
     use Math::Round qw(round);
 
     sub new {
-        my $class = shift;
+        my ($class, $son, $option) = @_;
+        my $ra_rules = $son->{rules};
+        if ($son->{optionSpecificRules}->{$option}){
+          push @{$ra_rules}, @{$son->{optionSpecificRules}->{$option}};
+        }
+        my $rh_effects = $son->{effectSets};
+        if ($son->{optionSpecificEffects}->{$option}){
+          $rh_effects = {$rh_effects, $son->{optionSpecificEffects}->{$option}};
+        }
         my $this  = {
-            _mode => shift,
+#            _mode => shift,
+            _sonification => $son,
+            _rules => $ra_rules,
+            _effects=> $rh_effects,
             _testtools => ns_testtools->new,
+            _audlib => ns_audlibrary->new,
+            _outputs => [{path=>'/home/pi/nsdata/gpio/sig_l.o', field=>'detected_l', ra_sig=>[]}, 
+                         {path=>'/home/pi/nsdata/gpio/sig_r.o', field=>'detected_r', ra_sig=>[]}],
             _gpoutpath => '/home/pi/nsdata/gpio/'
         };
         bless $this, $class;
@@ -144,7 +159,9 @@ package ns_audinterface{
     }
 
     sub generateEmptySig{
-        my ($this, $siglen) = @_;
+        #my ($this, $siglen) = @_;
+        my ($this) = @_;
+        my $siglen = $this->{_sonification}->{beats};
         my @ra;
         for (my $i=0; $i<$siglen; $i++){
             my %instr = (force=>0, dur=>0, fmod=>0, dvar=>0, syp=>0);
@@ -157,7 +174,8 @@ package ns_audinterface{
         my ($this, $rah) = @_;
         my @ra;
         foreach my $rh (@{$rah}){
-            my $s = "f$rh->{force}-d$rh->{dur}";
+            my $s = "f$rh->{force}-d$rh->{dur}-m$rh->{fmod}-v$rh->{dvar}-s$rh->{syp}";
+            print $s;
             push @ra, $s
         }
         return \@ra;
@@ -166,14 +184,72 @@ package ns_audinterface{
 
     sub resetSonicSig{
         my $this = shift;
-        my $ral = $this->generateEmptySig(21);
-        my $rar = $this->generateEmptySig(21);
-        my $filel = $this->{_gpoutpath} . "sig_l.o";
-        my $filer = $this->{_gpoutpath} . "sig_r.o";
-        my $ralt = $this->convertAoHtoInstrText($ral);
-        my $rart = $this->convertAoHtoInstrText($rar);
-        $this->physSendInstructions($filel, $ralt);
-        $this->physSendInstructions($filer, $rart);
+        foreach my $o (@{$this->{_outputs}}){
+          my $ra = $this->generateEmptySig();
+          my $rat = $this->convertAoHtoInstrText($ra);
+          $this->physSendInstructions($o->{path}, $rat);
+        }
+    }
+
+    sub sonicSig{
+        my ($this, $maxdist, $rah_do) = @_;
+        foreach my $o (@{$this->{_outputs}}){
+          $o->{ra_sig} = $this->generateEmptySig();
+        }
+        my $outputNumber = @{$this->{_outputs}};
+        my $closestdistance = $maxdist; #this value works out which is this closest detected object.
+        my @rules;
+        push @rules, $this->{_sonification}->{rules};
+        foreach my $d (@{$rah_do}){
+          my $detected = 0;
+          my @detectedOnOutput;
+          my $offCentreDistAdj = 10 * $outputNumber; #This is an adjustment to distance based on how 'in focus' an object is.
+          foreach my $o (@{$this->{_outputs}}){
+            if ($d->{$o->{field}}){
+              $offCentreDistAdj -= 10;
+              $detected++;
+              push @detectedOnOutput, $o;
+            }
+          }
+          if ($detected >= $outputNumber && $d->{distance} < $closestdistance){
+            $closestdistance = $d->{distance};
+          }
+          my $rh_adj = { dur => -2 + int($this->getDistanceRatio($d->{distance} + $offCentreDistAdj, $maxdist + 10, 5, 1) * 7),
+                         force => int($this->getDistanceRatio($d->{distance}, $maxdist, 4, 1) * 40),
+                         syp => 0,
+                         offset =>0,
+                         fmod => 0,
+                         dvar => 0};
+          foreach my $r (@{$this->{_rules}}){
+            my $test = $r->{test};
+            $test =~ s/{/\$d->/;
+            my $result = eval($test);
+            if ($result){
+              foreach my $ek (keys %{$this->{_effects}}){
+                if ($r->{effect} eq $ek){
+                  foreach my $e (@{$this->{_effects}->{$ek}}){
+                    my $test = $r->{test};
+                    $test =~ s/{/\$d->/;
+                    my $result = eval($test);
+                    if ($result){
+                      $rh_adj = $this->{_audlib}->addEffectToAction($e->{effect}, $rh_adj, $e->{arg});
+                    }
+                  }
+                }
+              }
+              foreach my $od (@detectedOnOutput){
+                foreach my $pos (@{$r->{positions}}){
+                  $this->{_audlib}->addActionToScore($r->{action},{$od->{ra_sig}, $pos, $rh_adj, $r->{arg}});      
+                }
+              }
+            }
+          }
+        }
+        $this->setSpeedDivider($closestdistance, $maxdist);
+        foreach my $o (@{$this->{_outputs}}){
+          my $ra_sigt = $this->convertAoHtoInstrText($o->{ra_sig});
+          $this->physSendInstructions($o->{path}, $ra_sigt);
+        }
     }
 
     sub LDDBsonicSig{

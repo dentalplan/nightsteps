@@ -32,31 +32,35 @@ package ns_loopit{
             _daterange => $rh->{daterange},
             _logic => $rh->{logic},
             _val => $rh->{val},
-            _soundmode => $rh->{soundmode},
-            _version => $rh->{version},
+            _option => $rh->{option},
             _maxdist => $rh->{maxdist},
+            _query => $rh->{query},
             _statuslightfile => '/home/pi/nsdata/gpio/dig1.o',
             _datalightfile => '/home/pi/nsdata/gpio/dig2.o',
             _lastdataset => {viewcount=>0, viewIDs=>{}, detectcount=>0, detectcount_l=>0, detectcount_r=>0, detectIDs_l=>{}, detectcount_r=>{}},
             _testtools => ns_testtools->new,
             _telem => ns_telemetry->new,
-            _aud => ns_audinterface->new,
+            _aud => ns_audinterface->new($rh->{query}->{sonification}, $rh->{option}),
             _db => ns_dbinterface->new,
             _dbfilepath => '/home/pi/nsdata/',
             _t => Time::Piece->new,      
         };
-        print "sound mode $this->{_soundmode} \n";
         my @time = localtime(time);
-        if ($this->{_soundmode} != 0){
-            $this->{_listenshapeLeft} = $rh->{listenshapeLeft};
-            $this->{_listenshapeRight} = $rh->{listenshapeRight};
-            my $year = $time[5] + 1900;
-            print "present year is $year";
-            $this->{_maxyear} = $year;
-        }else{
-            $this->{_listenshape} = $rh->{listenshape};
-        }
-
+        $this->{_listenshapeLeft} = $rh->{listenshapeLeft};
+        $this->{_listenshapeRight} = $rh->{listenshapeRight};
+        my $year = $time[5] + 1900;
+        print "present year is $year";
+        $this->{_maxyear} = $year;
+#        if ($this->{_soundmode} != 0){
+#            $this->{_listenshapeLeft} = $rh->{listenshapeLeft};
+#            $this->{_listenshapeRight} = $rh->{listenshapeRight};
+#            my $year = $time[5] + 1900;
+#            print "present year is $year";
+#            $this->{_maxyear} = $year;
+#        }else{
+#            $this->{_listenshape} = $rh->{listenshape};
+#        }
+#
         bless $this, $class;
         $this->{_logger} = ns_logger->new($this, \@time);
         $this->loopitSetup;
@@ -68,6 +72,7 @@ package ns_loopit{
         switch ($this->{_logic}){
 #            case "LDDBpercuss1"{ $this->LDDBpercussSetup} this has been removed May 2020
             case "LDDBpercuss2"{ $this->LDDBpercussSetup}
+            case "percussIt"{ $this->percussSetup}
         }
     }
 
@@ -76,7 +81,8 @@ package ns_loopit{
         switch ($this->{_logic}){
 #            case "LDDBpercuss1"{ $this->LDDBpercussIt} this has been removed May 2020
             case "LDDBpercuss2"{ $this->LDDBpercussItPoly}
-            case "LDDBpercussDemo"{ $this->LDDBpercussDemoIt}
+            case "percussIt"{ $this->percussItPoly}
+            case "percussDemo"{ $this->LDDBpercussDemoIt}
         }
         $this->{_logger}->logData;
     }
@@ -88,10 +94,16 @@ package ns_loopit{
     sub LDDBpercussSetup{
         my $this = shift;
         $this->{_db}->connectDB("ldd", 'Pg');
-#        $this->{_slidemin} = ns_gpio->new('a', 6);
-#        $this->{_slidemax} = ns_gpio->new('a', 4);
         $this->{_aud}->{_minyear} = 2008;
         $this->{_aud}->{_maxyear} = $this->{_t}->year;
+    }
+
+    sub percussSetup{
+        my $this = shift;
+        print "$this->{_query}->{databaseName}, $this->{_query}->{databaseType})\n";
+        $this->{_db}->connectDB($this->{_query}->{databaseName}, $this->{_query}->{databaseType}, $this->{_query}->{databasePw});
+        $this->{_aud}->{_minyear} = $this->{_query}->{minDate}->{year};
+        $this->{_aud}->{_maxyear} = $this->{_query}->{maxDate}->{year};
     }
 
     sub LDDBpercussDemoIt{
@@ -112,13 +124,42 @@ package ns_loopit{
         sleep(1);
     }
 
+    sub percussItPoly{
+        my $this = shift;
+        my $rh_loc = $this->{_telem}->readGPS;
+        if ($rh_loc->{success} == 1){
+            print "GPS success!\n";
+            my $rah_places = $this->prepPolygonPlaces($rh_loc);
+            $this->pipSortDataset($rah_places);
+            if ($rah_places){
+                print "sending data light signal\n";
+                my @datalight = ("q", "h100", "l100");
+                $this->{_aud}->physSendInstructions($this->{_datalightfile}, \@datalight);
+                $this->pipSigSound($rah_places)
+            }else{
+                $this->{_aud}->resetSonicSig; 
+                print "sending data light signal\n";
+                my @datalight = ("q", "h25","l25","h25", "l100");
+                $this->{_aud}->physSendInstructions($this->{_datalightfile}, \@datalight);
+            }
+            my @statuslight = ("t", "h1500", "l1");
+            $this->{_aud}->physSendInstructions($this->{_statuslightfile}, \@statuslight);
+#        }elsif ($this->{_soundmode} == 2){
+        }else{
+            $this->{_aud}->resetSonicSig; 
+            my @statuslight = ("t", "h150", "l100", "h50", "l100");
+            print "sending status light signal\n";
+            $this->{_aud}->physSendInstructions($this->{_statuslightfile}, \@statuslight);
+        }
+    }
+
     sub LDDBpercussItPoly{
         my $this = shift;
         my $rh_loc = $this->{_telem}->readGPS;
         if ($rh_loc->{success} == 1){
             print "GPS success!\n";
             my $rah_places = $this->LDDBprepPolygonPlaces($rh_loc);
-            $this->LDDBpipSortDataset($rah_places);
+            $this->pipSortDataset($rah_places);
             if ($rah_places){
                 print "sending data light signal\n";
                 my @datalight = ("q", "h100", "l100");
@@ -148,17 +189,34 @@ package ns_loopit{
         }
     }
 
-    sub LDDBpipSortDataset{
+    sub pipSortDataset{
         my ($this, $rah_places) = @_;
-        if ($this->{_soundmode} != 0){
-            @{$rah_places} = sort { $b->{detected_left} <=> $a->{detected_left}    or 
-                                    $b->{detected_right} <=> $a->{detected_right}    or 
-                                    $a->{distance} <=> $b->{distance} 
-                                  } @{$rah_places};
+#        if ($this->{_soundmode} != 0){
+        @{$rah_places} = sort { $b->{detected_left} <=> $a->{detected_left}    or 
+                                $b->{detected_right} <=> $a->{detected_right}    or 
+                                $a->{distance} <=> $b->{distance} 
+                              } @{$rah_places};
+#        }else{
+#            @{$rah_places} = sort { $b->{detected} <=> $a->{detected}    or 
+#                                    $a->{distance} <=> $b->{distance} 
+#                                  } @{$rah_places};
+#        }
+    }
+
+    sub pipSigSound{
+        my ($this, $rah_places) = @_;
+        my @do;
+        foreach my $rh_pl (@{$rah_places}){
+            if ($rh_pl->{detected_left} || $rh_pl->{detected_right}){
+                print "$rh_pl->{permission_id} detected! Left $rh_pl->{detected_left}. Right $rh_pl->{detected_right}. Distance is $rh_pl->{distance}\n\n";
+                push @do, $rh_pl;
+            }
+        }
+        $this->{_lastdataset}->{datacount} = @do;
+        if (@do){
+            $this->{_aud}->sonicSig($this->{_maxdist}, \@do);
         }else{
-            @{$rah_places} = sort { $b->{detected} <=> $a->{detected}    or 
-                                    $a->{distance} <=> $b->{distance} 
-                                  } @{$rah_places};
+            $this->{_aud}->resetSonicSig;
         }
     }
 
@@ -177,7 +235,6 @@ package ns_loopit{
         }else{
             $this->{_aud}->resetSonicSig;
         }
-
     }
     
     sub LDDBpipPercussChunkStereo{
@@ -217,7 +274,8 @@ package ns_loopit{
     }
 
     sub LDDBcreateDateCondition{
-        my $this = shift; 
+        my $this = shift;
+        print "creating date condition\n"; 
         my $rh = $this->{_daterange}->readDateRange;
         my $cond;
         switch ($rh->{state}){
@@ -246,6 +304,7 @@ package ns_loopit{
         return $cond;
     }
 
+
     sub LDDBcreateSwitchCondition{
         my $this = shift;
         my $sql = {  ra_fields => [], from=> ")", where => "", having => "" };
@@ -272,6 +331,79 @@ package ns_loopit{
         return $sql;
     }
 
+    sub prepPolygonPlaces{
+        my ($this, $rh_loc) = @_;
+        #print "$sql\n";
+        my $viewFormed = $this->createNearbyView($rh_loc);
+        my $rah = [];
+        if ($viewFormed) {
+          my $rh_view = $this->{_query}->{viewQuery};
+          my $rh_geoquery = $this->{_query}->{geosonQuery};
+          my $option = $this->{_option};
+          my $sql = "SELECT COUNT($rh_view->{keyField}->{name}) FROM $rh_view->{viewName}";
+          $this->{_lastdataset}->{viewcount} = $this->{_db}->runsql_rtnScalar($sql);
+          print "$this->{_lastdataset}->{viewcount} in view \n"; 
+          my $ra_geofield = $this->setupPlaceGeoFields($rh_loc);
+          # Now we go on to the polygon calcs
+          my @fields = ();
+          push @fields, @{$rh_geoquery->{otherSelectFields}};
+          push @fields, @{$ra_geofield};
+          if ($this->{_query}->{geosonQuery}->{options}->{$option}){
+              push @fields, $this->{_query}->{geosonQuery}->{options}->{$option}->{fields};
+          }
+          my %sqlhash = ( fields=>\@fields,
+                      table=>$rh_geoquery->{from},
+                      where=>"",
+  #                    groupbys=>\(),
+                      having=>"",
+                      orderby=>"");
+          #print "running final query...\n";
+          $rah = $this->{_db}->runSqlHash_rtnAoHRef(\%sqlhash, 1);
+          #$this->{_testtools}->printRefArrayOfHashes($rah);
+        }else{
+          print "View formation failed\n";
+        }
+        #print "done\n";
+        return $rah;
+    }
+
+    sub createNearbyView{
+        my ($this, $rh_loc) = @_;
+        print "creating view sub started\n";
+        my $DLen = $this->{_telem}->getDegreeToMetre($rh_loc);
+        my $scoopDist = 600; # this is how far away the points are the sniffer can check. For very large sites, this may cause problems.
+        my $dateCondition = $this->LDDBcreateDateCondition;
+        my $option = $this->{_option};
+        my $rh_sc = $this->{_query}->{viewQuery}->{options}->{$option};
+        my $distlon = $scoopDist/$DLen->{lon};
+        my $distlat = $scoopDist/$DLen->{lat};
+        #Get the dimensions of the query box we are looking in/
+        my %lon = (min=>$rh_loc->{lon} - $distlon, max=>$rh_loc->{lon} +$distlon) ;
+        my %lat = (min=>$rh_loc->{lat} - $distlat, max=>$rh_loc->{lat} +$distlat) ;
+#        my @groupby = ("lon", "lat", "p.completed_date", "p.permission_id");
+  
+        my $rh_view = $this->{_query}->{viewQuery};
+        #first we have to do a view that limits what we are looking at, so we don't have to do complicated polygon calcs on the whole DB!
+        my $groupby = $rh_view->{otherGroupbyFields} . ", $rh_view->{latField}, $rh_view->{lonField}, $rh_view->{keyField}->{table}\.$rh_view->{keyField}->{name}";
+        my $field = "$groupby, $rh_view->{selectOnlyFields}";
+        if (length($rh_sc->{fields}) > 1){
+          $field .= ", $rh_sc->{fields} ";
+        } 
+#        foreach my $f (@{$rh_sc->{ra_fields}}){ $field .= ", $f";}
+        my $from = $rh_view->{from} . $rh_sc->{from}; 
+        my $where =  " WHERE ($rh_view->{lonField} BETWEEN $lon{min} AND $lon{max}) AND " .
+                     "($rh_view->{latField} BETWEEN $lat{min} AND $lat{max}) " . 
+                      $dateCondition . $rh_sc->{where};
+        my $having = $rh_view->{having} . $rh_sc->{having} ;
+        print "dropping existing view...\n";
+        my $sv = $this->{_db}->runsql_rtnSuccessOnly("DROP VIEW IF EXISTS $rh_view->{viewName};");
+        print "creating view...\n";
+        my $sql = "CREATE VIEW $rh_view->{viewName} AS SELECT $field FROM $from $where GROUP BY $groupby $having;";
+        print $sql;
+        my $sq = $this->{_db}->runsql_rtnSuccessOnly($sql);
+        return $sq;
+    }
+
     sub LDDBprepPolygonPlaces{
         my ($this, $rh_loc) = @_;
         #print "$sql\n";
@@ -281,7 +413,7 @@ package ns_loopit{
           my $sql = "SELECT COUNT(permission_id) FROM app_ldd.v_perm_widerarea";
           $this->{_lastdataset}->{viewcount} = $this->{_db}->runsql_rtnScalar($sql);
           print "$this->{_lastdataset}->{viewcount} in view \n"; 
-          my $ra_geofield = $this->setupPlaceGeoFields($rh_loc);
+          my $ra_geofield = $this->LDDBsetupPlaceGeoFields($rh_loc);
           # Now we go on to the polygon calcs
           my @fields = ("lat", "lon", "completed_date", "permission_id", "status_rc",               
                         "permissionyear", "completedyear", "exist_res_units_yn",
@@ -341,34 +473,59 @@ package ns_loopit{
     sub setupPlaceGeoFields{
         my ($this, $rh_loc) = @_;
         my @geofield;
-        if ($this->{_soundmode} != 0){
-            my @listenPolys = ($this->{_telem}->prepPolyCo($rh_loc, $this->{_listenshapeLeft}),
-                              $this->{_telem}->prepPolyCo($rh_loc, $this->{_listenshapeRight}));
-            my @poly;
-            foreach my $lp (@listenPolys){
-                my @listenPts = $lp->points;
-                my $polyStr = "";
-                foreach my $pt (@listenPts){ $polyStr .= "$pt->[0] $pt->[1],"; }
-                chop $polyStr;
-                push @poly, $polyStr;
-            }
-            @geofield = ( "CASE WHEN the_geom IS NOT NULL THEN ST_DWithin(the_geom::geography, 'SRID=4326;POLYGON(($poly[0]))'::geography, 5) " . 
-                          "ELSE ST_DWithin(the_geom_pt::geography, 'SRID=4326;POLYGON(($poly[0]))'::geography, 5) END AS detected_left",  
-                          "CASE WHEN the_geom IS NOT NULL THEN ST_DWithin(the_geom::geography, 'SRID=4326;POLYGON(($poly[1]))'::geography, 5) " . 
-                          "ELSE ST_DWithin(the_geom_pt::geography, 'SRID=4326;POLYGON(($poly[1]))'::geography, 5) END AS detected_right",  
-                          "CASE WHEN the_geom IS NOT Null THEN ST_Distance(the_geom::geography, 'SRID=4326;POINT($rh_loc->{lon} $rh_loc->{lat})'::geography) " . 
-                          "ELSE ST_Distance(the_geom_pt::geography, 'SRID=4326;POINT($rh_loc->{lon} $rh_loc->{lat})'::geography) END AS distance");
-        }else{
-            my $listenPoly = $this->{_telem}->prepPolyCo($rh_loc, $this->{_listenshape});
-            my @listenPts = $listenPoly->points;
-            my $poly = "";
-            foreach my $pt (@listenPts){ $poly .= "$pt->[0] $pt->[1],"; }
-            chop $poly;
-            @geofield = ("CASE WHEN the_geom IS NOT NULL THEN ST_DWithin(the_geom::geography, 'SRID=4326;POLYGON(($poly))'::geography, 5) " . 
-                          "ELSE ST_DWithin(the_geom_pt::geography, 'SRID=4326;POLYGON(($poly))'::geography, 5) END AS detected",  
-                          "CASE WHEN the_geom IS NOT Null THEN ST_Distance(the_geom::geography, 'SRID=4326;POINT($rh_loc->{lon} $rh_loc->{lat})'::geography) " . 
-                          "ELSE ST_Distance(the_geom_pt::geography, 'SRID=4326;POINT($rh_loc->{lon} $rh_loc->{lat})'::geography) END AS distance");
+        #if ($this->{_soundmode} != 0){
+        my @listenPolys = ($this->{_telem}->prepPolyCo($rh_loc, $this->{_listenshapeLeft}),
+                          $this->{_telem}->prepPolyCo($rh_loc, $this->{_listenshapeRight}));
+        my @poly;
+        foreach my $lp (@listenPolys){
+            my @listenPts = $lp->points;
+            my $polyStr = "";
+            foreach my $pt (@listenPts){ $polyStr .= "$pt->[0] $pt->[1],"; }
+            chop $polyStr;
+            push @poly, $polyStr;
         }
+        my $geoshape = $this->{_query}->{geosonQuery}->{polygonField};
+        my $geopoint = $this->{_query}->{geosonQuery}->{pointField};
+        @geofield = ( "CASE WHEN $geoshape IS NOT NULL THEN ST_DWithin($geoshape\::geography, 'SRID=4326;POLYGON(($poly[0]))'::geography, 5) " . 
+                      "ELSE ST_DWithin($geopoint\::geography, 'SRID=4326;POLYGON(($poly[0]))'::geography, 5) END AS detected_left",  
+                      "CASE WHEN $geoshape IS NOT NULL THEN ST_DWithin($geoshape\::geography, 'SRID=4326;POLYGON(($poly[1]))'::geography, 5) " . 
+                      "ELSE ST_DWithin($geopoint\::geography, 'SRID=4326;POLYGON(($poly[1]))'::geography, 5) END AS detected_right",  
+                      "CASE WHEN $geoshape IS NOT Null THEN ST_Distance($geoshape\::geography, 'SRID=4326;POINT($rh_loc->{lon} $rh_loc->{lat})'::geography) " . 
+                      "ELSE ST_Distance($geopoint\::geography, 'SRID=4326;POINT($rh_loc->{lon} $rh_loc->{lat})'::geography) END AS distance");
+        return \@geofield;
+    }
+
+    sub LDDBsetupPlaceGeoFields{
+        my ($this, $rh_loc) = @_;
+        my @geofield;
+        #if ($this->{_soundmode} != 0){
+        my @listenPolys = ($this->{_telem}->prepPolyCo($rh_loc, $this->{_listenshapeLeft}),
+                          $this->{_telem}->prepPolyCo($rh_loc, $this->{_listenshapeRight}));
+        my @poly;
+        foreach my $lp (@listenPolys){
+            my @listenPts = $lp->points;
+            my $polyStr = "";
+            foreach my $pt (@listenPts){ $polyStr .= "$pt->[0] $pt->[1],"; }
+            chop $polyStr;
+            push @poly, $polyStr;
+        }
+        @geofield = ( "CASE WHEN the_geom IS NOT NULL THEN ST_DWithin(the_geom::geography, 'SRID=4326;POLYGON(($poly[0]))'::geography, 5) " . 
+                      "ELSE ST_DWithin(the_geom_pt::geography, 'SRID=4326;POLYGON(($poly[0]))'::geography, 5) END AS detected_left",  
+                      "CASE WHEN the_geom IS NOT NULL THEN ST_DWithin(the_geom::geography, 'SRID=4326;POLYGON(($poly[1]))'::geography, 5) " . 
+                      "ELSE ST_DWithin(the_geom_pt::geography, 'SRID=4326;POLYGON(($poly[1]))'::geography, 5) END AS detected_right",  
+                      "CASE WHEN the_geom IS NOT Null THEN ST_Distance(the_geom::geography, 'SRID=4326;POINT($rh_loc->{lon} $rh_loc->{lat})'::geography) " . 
+                      "ELSE ST_Distance(the_geom_pt::geography, 'SRID=4326;POINT($rh_loc->{lon} $rh_loc->{lat})'::geography) END AS distance");
+#        }else{
+#            my $listenPoly = $this->{_telem}->prepPolyCo($rh_loc, $this->{_listenshape});
+#            my @listenPts = $listenPoly->points;
+#            my $poly = "";
+#            foreach my $pt (@listenPts){ $poly .= "$pt->[0] $pt->[1],"; }
+#            chop $poly;
+#            @geofield = ("CASE WHEN the_geom IS NOT NULL THEN ST_DWithin(the_geom::geography, 'SRID=4326;POLYGON(($poly))'::geography, 5) " . 
+#                          "ELSE ST_DWithin(the_geom_pt::geography, 'SRID=4326;POLYGON(($poly))'::geography, 5) END AS detected",  
+#                          "CASE WHEN the_geom IS NOT Null THEN ST_Distance(the_geom::geography, 'SRID=4326;POINT($rh_loc->{lon} $rh_loc->{lat})'::geography) " . 
+#                          "ELSE ST_Distance(the_geom_pt::geography, 'SRID=4326;POINT($rh_loc->{lon} $rh_loc->{lat})'::geography) END AS distance");
+#        }
         return \@geofield;
     }
 

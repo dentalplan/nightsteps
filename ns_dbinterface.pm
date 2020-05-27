@@ -15,8 +15,9 @@ package ns_dbinterface{
 	sub connectDB {
 		my $this = shift;
 		my $database = shift;
-		my $driver = shift; 
-        my $dsn;
+		my $driver = shift;
+    my $pw = shift; 
+    my $dsn;
 		my $userid;
 		my $password;
         if ($driver eq "SQLite"){
@@ -25,8 +26,9 @@ package ns_dbinterface{
           $password = "";
         } elsif ($driver eq "Pg"){
           $dsn = "DBI:$driver:dbname=$database;host=localhost;port=5432";
+          print $dsn;
           $userid = "pi";
-          $password = "3Oki24tpoppyli6";
+          $password = "$pw";
         }
 		$this->{dbh} = DBI->connect($dsn, $userid, $password, { RaiseError => 1 }) 
 			      or die $DBI::errstr;
@@ -195,7 +197,7 @@ package ns_dbinterface{
               $groupby . 
               $r_barrel->{having} . 
 			  $r_barrel->{orderby} . ";";
-#    print "$sql\n";
+    print "$sql\n";
 		my $query = $this->{dbh}->prepare($sql);
     $query->execute;		
 		my $num_fields = @{$r_barrel->{fields}};
