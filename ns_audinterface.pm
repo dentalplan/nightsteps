@@ -25,8 +25,8 @@ package ns_audinterface{
             _effects=> $rh_effects,
             _testtools => ns_testtools->new,
             _audlib => ns_audlibrary->new,
-            _outputs => [{path=>'/home/pi/nsdata/gpio/sig_l.o', field=>'detected_l', ra_sig=>[]}, 
-                         {path=>'/home/pi/nsdata/gpio/sig_r.o', field=>'detected_r', ra_sig=>[]}],
+            _outputs => [{path=>'/home/pi/nsdata/gpio/sig_l.o', field=>'detected_left', ra_sig=>[]}, 
+                         {path=>'/home/pi/nsdata/gpio/sig_r.o', field=>'detected_right', ra_sig=>[]}],
             _gpoutpath => '/home/pi/nsdata/gpio/'
         };
         bless $this, $class;
@@ -164,7 +164,7 @@ package ns_audinterface{
         my $siglen = $this->{_sonification}->{beats};
         my @ra;
         for (my $i=0; $i<$siglen; $i++){
-            my %instr = (force=>0, dur=>0, fmod=>0, dvar=>0, syp=>0);
+            my %instr = (force=>0, dur=>0, fmod=>0, dvar=>0, syp=>0, offset=>0);
             push @ra, \%instr;
         }
         return \@ra;
@@ -174,8 +174,8 @@ package ns_audinterface{
         my ($this, $rah) = @_;
         my @ra;
         foreach my $rh (@{$rah}){
-            my $s = "f$rh->{force}-d$rh->{dur}-m$rh->{fmod}-v$rh->{dvar}-s$rh->{syp}";
-            print $s;
+            my $s = "f$rh->{force}-d$rh->{dur}-m$rh->{fmod}-v$rh->{dvar}-s$rh->{syp}-o$rh->{offset}";
+            print "$s\n";
             push @ra, $s
         }
         return \@ra;
@@ -220,36 +220,54 @@ package ns_audinterface{
                          offset =>0,
                          fmod => 0,
                          dvar => 0};
+          my $numberOfRules = @{$this->{_rules}};
+          print $numberOfRules;
           foreach my $r (@{$this->{_rules}}){
             my $test = $r->{test};
-            $test =~ s/{/\$d->/;
+            $test =~ s/{/\$d->{/;
+            print "evaluating $test\n";
             my $result = eval($test);
             if ($result){
-              foreach my $ek (keys %{$this->{_effects}}){
-                if ($r->{effect} eq $ek){
-                  foreach my $e (@{$this->{_effects}->{$ek}}){
-                    my $test = $r->{test};
-                    $test =~ s/{/\$d->/;
-                    my $result = eval($test);
-                    if ($result){
-                      $rh_adj = $this->{_audlib}->addEffectToAction($e->{effect}, $rh_adj, $e->{arg});
-                    }
-                  }
-                }
-              }
+              print "Success!  $r->{action}\n";
+              $rh_adj = $this->applyEffectsToAction($r, $d, $rh_adj);
               foreach my $od (@detectedOnOutput){
+                print "implementing actions";
                 foreach my $pos (@{$r->{positions}}){
-                  $this->{_audlib}->addActionToScore($r->{action},{$od->{ra_sig}, $pos, $rh_adj, $r->{arg}});      
+                  $this->{_audlib}->addActionToScore($r->{action},[$od->{ra_sig}, $pos, $rh_adj, $r->{arg}]);      
                 }
               }
+            }else{
+              print "$test failed\n";
             }
           }
         }
         $this->setSpeedDivider($closestdistance, $maxdist);
         foreach my $o (@{$this->{_outputs}}){
+          print "Writing output to $o->{path}\n";
           my $ra_sigt = $this->convertAoHtoInstrText($o->{ra_sig});
           $this->physSendInstructions($o->{path}, $ra_sigt);
         }
+    }
+
+    sub applyEffectsToAction{
+        my ($this, $r, $d, $rh_adj) = @_;
+        foreach my $ek (keys %{$this->{_effects}}){
+          if ($r->{applyEffects} eq $ek){
+            foreach my $e (@{$this->{_effects}->{$ek}}){
+              my $test = $e->{test};
+              $test =~ s/\{/\$d->\{/;
+              print "Evaluating $test to apply $e->{effect}\n";
+              my $result = eval($test);
+              if ($result){
+                print "adding effect $e->{effect}\n";
+                $rh_adj = $this->{_audlib}->addEffectToAction($e->{effect}, $rh_adj, $e->{arg});
+              }
+            }
+          }else{
+            print "$ek effects don't apply\n"
+          }
+        }
+        return $rh_adj;
     }
 
     sub LDDBsonicSig{

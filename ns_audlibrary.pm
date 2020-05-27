@@ -14,6 +14,7 @@ package ns_audlibrary{
   sub addActionToScore{
     my ($this, $action, $ra_arg) = @_;
     my $rtn = $ra_arg->[0];
+    print "Adding $action to $ra_arg->[1]\n";
     switch($action){
       case("beat"){$rtn = $this->beat(@{$ra_arg})}
       case("rhythm"){$rtn = $this->rhythm(@{$ra_arg})}
@@ -25,6 +26,7 @@ package ns_audlibrary{
   sub addEffectToAction{
       my ($this, $effect, $rh_core, $rh_arg) = @_;
       my $rtn = $rh_core;
+      print "adding effect to action\n";
       switch($effect){
         case("destable"){$rtn = $this->destable($rh_core, $rh_arg)}
         case("diminish"){$rtn = $this->diminish($rh_core, $rh_arg)}
