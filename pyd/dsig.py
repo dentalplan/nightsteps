@@ -11,7 +11,7 @@ from collections import deque
 #-------------|---------------------------------------------------------#
 
 #digOut = [DigitalOutputDevice(5), DigitalOutputDevice(6)]
-out = [PWMOutputDevice(12), PWMOutputDevice(13), DigitalOutputDevice(6), DigitalOutputDevice(23)]
+out = [PWMOutputDevice(12), PWMOutputDevice(13), DigitalOutputDevice(23)]
 outType = ["pwm","pwm","dig", "dig"]
 state = [0.0,0.0,0.0,0.0]
 basebeat = 64.0
@@ -21,8 +21,8 @@ beatlength = basebeat/speedDivider
 magnetic = [True,True,True,False]
 #look in the following files for instructions
 speedDivPath = "/home/pi/nsdata/gpio/sig_speeddiv.o"
-filepath = ["/home/pi/nsdata/gpio/dsig_r.o", "/home/pi/nsdata/gpio/dsig_l.o", "/home/pi/nsdata/gpio/dsig_b.o", "/home/pi/nsdata/gpio/dsig_i.o"]
-statepath = ["/home/pi/nsdata/gpio/mag1.s", "/home/pi/nsdata/gpio/mag2.s", "/home/pi/nsdata/gpio/mag3.s", "/home/pi/nsdata/gpio/mag_null.s"]
+filepath = ["/home/pi/nsdata/gpio/dsig_r.o", "/home/pi/nsdata/gpio/dsig_l.o", "/home/pi/nsdata/gpio/dsig_i.o"]
+statepath = ["/home/pi/nsdata/gpio/mag1.s", "/home/pi/nsdata/gpio/mag2.s", "/home/pi/nsdata/gpio/mag_null.s"]
 #make two double ended queues for instructions, one for eeach of the digital outs
 #queuedInstruction = [deque(['s']), deque(['s']), deque(['s'])]
 activeInstruction = [ {'inspecting':0, 'timepassed':0.0, 'instr': "", 'instrset': [{'force':0.0, 'dur':64.0}]},
@@ -43,25 +43,34 @@ for sp in statepath:
 def combineInstrSets(instrParts, maxdur):
     comboInstr = {'ttldur':maxdur, 'set':[]}
     ele = {'force':0.0, 'dur':0.0}
+#    print "max dur is " + str(maxdur)
     for d in range(0,int(maxdur)):
-      print "examining dur unit " + str(d)
+#      print "examining dur unit " + str(d)
       force = 0.0
       for ip in instrParts:
         p = ip['place']
         if p < ip['length']:
           ins = ip['set'][p]
-          print "adding " + str(ins['force']) + " to force\n"
+#          print "adding " + str(ins['force']) + " to force"
           force += ins['force']
-          if ins['dur'] + ip['durlapsed'] < d:
+          if ins['dur'] + ip['durlapsed'] <= d+1:
             ip['durlapsed'] += ins['dur']
             ip['place'] += 1
       if force == ele['force']:
-        ele['dur'] +=1
-        print "continuing.. add 1 to dur"
+        ele['dur'] += 1.0
+#        print "continuing.. add 1 to dur"
       else:
+#        print "starting new instruction stage"
         comboInstr['set'].append(ele)
         ele = {'force':force, 'dur':1.0}
+    comboInstr['set'].append(ele)
+#    printFinalComboInstr(comboInstr)
     return comboInstr
+
+def printFinalComboInstr(comboInstr):
+    print "Outputting combined instr"
+    for e in comboInstr['set']:
+      print str(e['dur']) + "," + str(e['force'])
 
 def adjDurAndForce(instr):
     check = instr['ttldur'] > basebeat
@@ -98,8 +107,7 @@ def getInstrFromFile(fileName, i, prevInstr):
 #        print "lines read\n"
           if prevInstr['instr'] != lines[i]:
             try:
-              newInstr['instrset'] = instrLibrary[lines[i]]
-              newInstr['instr'] = adjDurAndForce(lines[i])
+              newInstr['instrset'] = instrLibrary[lines[i]]['set']
             except:
               newInstr['instr'] = lines[i]
               instrSets = []
@@ -112,14 +120,19 @@ def getInstrFromFile(fileName, i, prevInstr):
                 instrSets.append(iset)
               setLen = len(instrSets)
               if setLen > 1:
-                combinedInstr = combineInstrSets(instrSets, maxdur)   
-                instrLibrary[lines[i]] = list(combinedInstr['set'])
+                combinedInstr = combineInstrSets(instrSets, maxdur)
+                combinedInstr['uses'] = 0 
+                instrLibrary[lines[i]] = list(combinedInstr)
                 resolvedInstr = adjDurAndForce(combinedInstr)
                 newInstr['instrset'] = list(resolvedInstr['set'])    
               elif setLen == 1:
-                instrLibrary[lines[i]] = list(instrSets[0]['set'])
+                instrLibrary[lines[i]] = list(instrSets[0])
+                instrSets[0]['uses'] = 0
                 resolvedInstr = adjDurAndForce(instrSets[0])
-                newInstr['instrset'] = list(resolvedInstr['set'])    
+                newInstr['instrset'] = list(resolvedInstr['set'])
+            else:
+              newInstr['instr'] = adjDurAndForce(lines[i])
+              print "found instr in library\n" 
           else:
             newInstr['instr'] = str(prevInstr['instr'])
             newInstr['instrset'] = list(prevInstr['instrset'])
@@ -166,7 +179,7 @@ def logOutput(actIn, i, fn):
     with open('/home/pi/nsdata/gpio/dsig-log/' + fn + '.o', 'a') as logfile:
       po = "scorePlace,dur,force\n"
       for e in actIn['instrset']:
-        po += str(i)"," + str(e['dur']) + "," + str(e['force']) + "\n" 
+        po += str(i) + "," + str(e['dur']) + "," + str(e['force']) + "\n" 
       logfile.write(po)
 
 
@@ -198,9 +211,10 @@ while True:
         lasttime = nowtime
         #print "now: " +str(nowtime) + " before: " + str(lasttime) + " t: " + str(t)
         time.sleep(0.005)
-    logOutput(activeInstruction[0], i, "r")
-    logOutput(activeInstruction[1], i, "l")
+#    logOutput(activeInstruction[0], i, "r")
+#    logOutput(activeInstruction[1], i, "l")
     i += 1
+#    print "now processing score position " + str(i)
     for f in range (0, len(filepath)):
         if i >= instrSize[f]:
             i = 0
