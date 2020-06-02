@@ -1,7 +1,7 @@
 {
   "databaseName":"ldd",
   "databaseType":"Pg",
-  "databasePw":"",
+  "databasePw":"cZMUhxxjKS8zxgDLBqverJEF2qZns8",
   "minDate":{"year":2007, "month":9,"day":1},
   "maxDate":{"year":2019, "month":8,"day":31},
   "viewQuery":{
@@ -97,6 +97,7 @@
       {
         "test":"{status_rc} eq 'COMPLETED'",
         "action":"beat",
+        "applyEffects":"",
         "arg":{},
         "positions":[1]
       },
@@ -117,6 +118,7 @@
       {
         "test":"{status_rc} eq 'SUBMITTED' || {status_rc} eq 'STARTED'",
         "action":"beat",
+        "applyEffects":"",
         "arg":{},
         "positions":[7]
       },
