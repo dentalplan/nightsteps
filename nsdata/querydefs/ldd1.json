@@ -17,8 +17,11 @@
       "dateField":"p.completed_date",
       "statusField":"p.status_rc",
       "stillToComeStatuses":["SUBMITTED","STARTED"],
+      "stillToComeStatusCheck":"(p.status_rc = 'SUBMITTED' OR p.status_rc = 'STARTED')",
       "dateRangeStatuses":["COMPLETED"],
-      "mightHaveBeenStatuses":["DELETED","LAPSED"]
+      "dateRangeStatusCheck":"(p.status_rc = 'COMPLETED')",
+      "mightHaveBeenStatuses":["DELETED","LAPSED"],
+      "mightHaveBeenStatusCheck":"(p.status_rc = 'DELETED' OR p.status_rc = 'LAPSED')"
     },
     "options":{
       "everything":{

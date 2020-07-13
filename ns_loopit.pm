@@ -87,16 +87,8 @@ package ns_loopit{
         $this->{_logger}->logData;
     }
 
-
-    ######################################################
-    ### LDDB Block  ######################################
-
-    sub LDDBpercussSetup{
-        my $this = shift;
-        $this->{_db}->connectDB("ldd", 'Pg');
-        $this->{_aud}->{_minyear} = 2008;
-        $this->{_aud}->{_maxyear} = $this->{_t}->year;
-    }
+    #####################################################
+    ### Configurable Block #############################
 
     sub percussSetup{
         my $this = shift;
@@ -104,24 +96,6 @@ package ns_loopit{
         $this->{_db}->connectDB($this->{_query}->{databaseName}, $this->{_query}->{databaseType}, $this->{_query}->{databasePw});
         $this->{_aud}->{_minyear} = $this->{_query}->{minDate}->{year};
         $this->{_aud}->{_maxyear} = $this->{_query}->{maxDate}->{year};
-    }
-
-    sub LDDBpercussDemoIt{
-        my $this = shift;
-        #my @fn = ("digtest1.o", "digtest2.o", "digtest3.o", "digtestPause.o");
-#        my @fn = ("pwmtest1.o", "pwmtest3.o");
-        my @demotrack = ( {src=>"/home/pi/nsdata/gpio/sig_demo_l.o", dst=>"/home/pi/nsdata/gpio/sig_l.o"},
-                          {src=>"/home/pi/nsdata/gpio/sig_demo_r.o", dst=>"/home/pi/nsdata/gpio/sig_r.o"},
-                          {src=>"/home/pi/nsdata/gpio/sig_demo_speeddiv.o", dst=>"/home/pi/nsdata/gpio/sig_speeddiv.o"},
-                          {src=>"/home/pi/nsdata/gpio/dig1_demo.o", dst=>$this->{_statuslightfile}} );
-        my $size = @demotrack;
-        for(my $i=0; $i<$size; $i++){
-            print "cp $demotrack[$i]->{src} $demotrack[$i]->{dst}";
-            system "cp $demotrack[$i]->{src} $demotrack[$i]->{dst}";
-        }
-        $this->{_lastdataset}->{datacount} = "demo";
-        $this->{_lastdataset}->{viewcount} = "demo";
-        sleep(1);
     }
 
     sub percussItPoly{
@@ -151,6 +125,173 @@ package ns_loopit{
             print "sending status light signal\n";
             $this->{_aud}->physSendInstructions($this->{_statuslightfile}, \@statuslight);
         }
+    }
+
+
+    sub pipSortDataset{
+        my ($this, $rah_places) = @_;
+        @{$rah_places} = sort { $b->{detected_left} <=> $a->{detected_left}    or 
+                                $b->{detected_right} <=> $a->{detected_right}    or 
+                                $a->{distance} <=> $b->{distance} 
+                              } @{$rah_places};
+    }
+
+    sub pipSigSound{
+        my ($this, $rah_places) = @_;
+        my @do;
+        foreach my $rh_pl (@{$rah_places}){
+            if ($rh_pl->{detected_left} || $rh_pl->{detected_right}){
+                print "$rh_pl->{permission_id} detected! Left $rh_pl->{detected_left}. Right $rh_pl->{detected_right}. Distance is $rh_pl->{distance}\n\n";
+                push @do, $rh_pl;
+            }
+        }
+        $this->{_lastdataset}->{datacount} = @do;
+        if (@do){
+            $this->{_aud}->sonicSig($this->{_maxdist}, \@do);
+        }else{
+            $this->{_aud}->resetSonicSig;
+        }
+    }
+
+    sub prepPolygonPlaces{
+        my ($this, $rh_loc) = @_;
+        #print "$sql\n";
+        my $viewFormed = $this->createNearbyView($rh_loc);
+        my $rah = [];
+        if ($viewFormed) {
+          my $rh_view = $this->{_query}->{viewQuery};
+          my $rh_geoquery = $this->{_query}->{geosonQuery};
+          my $option = $this->{_option};
+          my $sql = "SELECT COUNT($rh_view->{keyField}->{name}) FROM $rh_view->{viewName}";
+          $this->{_lastdataset}->{viewcount} = $this->{_db}->runsql_rtnScalar($sql);
+          print "$this->{_lastdataset}->{viewcount} in view \n"; 
+          my $ra_geofield = $this->setupPlaceGeoFields($rh_loc);
+          # Now we go on to the polygon calcs
+          my @fields = ();
+          push @fields, @{$rh_geoquery->{otherSelectFields}};
+          push @fields, @{$ra_geofield};
+          if ($this->{_query}->{geosonQuery}->{options}->{$option}){
+              push @fields, $this->{_query}->{geosonQuery}->{options}->{$option}->{fields};
+          }
+          my %sqlhash = ( fields=>\@fields,
+                      table=>$rh_geoquery->{from},
+                      where=>"",
+  #                    groupbys=>\(),
+                      having=>"",
+                      orderby=>"");
+          #print "running final query...\n";
+          $rah = $this->{_db}->runSqlHash_rtnAoHRef(\%sqlhash, 1);
+          #$this->{_testtools}->printRefArrayOfHashes($rah);
+        }else{
+          print "View formation failed\n";
+        }
+        #print "done\n";
+        return $rah;
+    }
+
+    sub createNearbyView{
+        my ($this, $rh_loc) = @_;
+        print "creating view sub started\n";
+        my $DLen = $this->{_telem}->getDegreeToMetre($rh_loc);
+        my $scoopDist = 600; # this is how far away the points are the sniffer can check. For very large sites, this may cause problems.
+        my $dateCondition = $this->createDateCondition;
+        my $option = $this->{_option};
+        my $rh_sc = $this->{_query}->{viewQuery}->{options}->{$option};
+        my $distlon = $scoopDist/$DLen->{lon};
+        my $distlat = $scoopDist/$DLen->{lat};
+        #Get the dimensions of the query box we are looking in/
+        my %lon = (min=>$rh_loc->{lon} - $distlon, max=>$rh_loc->{lon} +$distlon) ;
+        my %lat = (min=>$rh_loc->{lat} - $distlat, max=>$rh_loc->{lat} +$distlat) ;
+#        my @groupby = ("lon", "lat", "p.completed_date", "p.permission_id");
+  
+        my $rh_view = $this->{_query}->{viewQuery};
+        #first we have to do a view that limits what we are looking at, so we don't have to do complicated polygon calcs on the whole DB!
+        my $groupby = $rh_view->{otherGroupbyFields} . ", $rh_view->{latField}, $rh_view->{lonField}, $rh_view->{keyField}->{table}\.$rh_view->{keyField}->{name}";
+        my $field = "$groupby, $rh_view->{selectOnlyFields}";
+        if (length($rh_sc->{fields}) > 1){
+          $field .= ", $rh_sc->{fields} ";
+        } 
+#        foreach my $f (@{$rh_sc->{ra_fields}}){ $field .= ", $f";}
+        my $from = $rh_view->{from} . $rh_sc->{from}; 
+        my $where =  " WHERE ($rh_view->{lonField} BETWEEN $lon{min} AND $lon{max}) AND " .
+                     "($rh_view->{latField} BETWEEN $lat{min} AND $lat{max}) " . 
+                      $dateCondition . $rh_sc->{where};
+        my $having = $rh_view->{having} . $rh_sc->{having} ;
+        print "dropping existing view...\n";
+        my $sv = $this->{_db}->runsql_rtnSuccessOnly("DROP VIEW IF EXISTS $rh_view->{viewName};");
+        print "creating view...\n";
+        my $sql = "CREATE VIEW $rh_view->{viewName} AS SELECT $field FROM $from $where GROUP BY $groupby $having;";
+        print $sql;
+        my $sq = $this->{_db}->runsql_rtnSuccessOnly($sql);
+        return $sq;
+    }
+    
+    sub createDateCondition{
+        my $this = shift;
+        print "creating date condition\n";
+        my $dateset = $this->{_query}->{viewQuery}->{dateFields};
+        my $statusfield = $dateset->{stausField};
+        my $rh = $this->{_daterange}->readDateRange;
+        my $cond;
+        switch ($rh->{state}){
+            case (0){  # $cond = " AND (status_rc = 'SUBMITTED' or status_rc = 'STARTED') "; 
+                        $cond = " AND " . $dateset->{stillToComeStatusCheck};}
+            case (3){   
+                        my $btmyear = $rh->{btm}->strftime('%Y-%m-%d');
+                        #$cond = " AND (status_rc = 'SUBMITTED' OR status_rc = 'STARTED' OR (status_rc = 'COMPLETED' AND p.completed_date >= '$btmyear')) ";
+                        $cond = " AND ($dateset->{stillToComeStatusCheck} OR ($dateset->{dateRangeStatusCheck} AND $dateset->{dateField} >= '$btmyear'))";
+                    }
+            case (4){
+                        my $topyear = $rh->{top}->strftime('%Y-%m-%d');
+                        my $btmyear = $rh->{btm}->strftime('%Y-%m-%d');
+                        #$cond = " AND (status_rc = 'COMPLETED' AND p.completed_date <= '$topyear' AND p.completed_date >= '$btmyear') ";
+                        $cond = " AND ($dateset->{dateRangeStatusCheck} AND $dateset->{dateField} <= '$topyear' AND $dateset->{dateField} >= '$btmyear') ";
+                    }
+            case (6){
+                        my $topyear = $this->{_daterange}->{_drp}->{highDate};
+                        my $btmyear = $this->{_daterange}->{_drp}->{lowDate};
+                        #$cond = " AND (status_rc = 'DELETED' OR status_rc = 'LAPSED' OR status_rc = 'STARTED' OR status_rc = 'SUBMITTED' OR " . 
+                        #        " (status_rc = 'COMPLETED' AND p.completed_date <= '$topyear' AND p.completed_date >= '$btmyear')) ";
+                        $cond = " AND ($dateset->{mightHaveBeenStatusCheck} OR $dateset->{stillToComeStatusCheck} OR " .
+                                " ($dateset->{dateRangeStatusCheck} AND $dateset->{dateField} <= '$topyear' AND $dateset->{dateField} >= '$btmyear')) ";
+                    }
+            case (7){
+                        my $topyear = $rh->{top}->strftime('%Y-%m-%d');
+                        #$cond = " AND (status_rc = 'DELETED' OR status_rc = 'LAPSED' OR (status_rc = 'COMPLETED' AND p.completed_date <= '$topyear')) ";
+                        $cond = " AND ($dateset->{mightHaveBeenStatusCheck} OR ($dateset->{dateRangeStatusCheck} AND $dateset->{dateField} <= '$topyear'))";
+                    }
+            case (8){   #$cond = " AND (status_rc = 'DELETED' OR status_rc = 'LAPSED') "; 
+                        $cond = " AND $dateset->{mightHaveBeenStatusCheck}";}
+        }
+        return $cond;
+    }
+
+    ######################################################
+    ### LDDB only Block  ######################################
+
+    sub LDDBpercussSetup{
+        my $this = shift;
+        $this->{_db}->connectDB("ldd", 'Pg');
+        $this->{_aud}->{_minyear} = 2008;
+        $this->{_aud}->{_maxyear} = $this->{_t}->year;
+    }
+
+    sub LDDBpercussDemoIt{
+        my $this = shift;
+        #my @fn = ("digtest1.o", "digtest2.o", "digtest3.o", "digtestPause.o");
+#        my @fn = ("pwmtest1.o", "pwmtest3.o");
+        my @demotrack = ( {src=>"/home/pi/nsdata/gpio/sig_demo_l.o", dst=>"/home/pi/nsdata/gpio/sig_l.o"},
+                          {src=>"/home/pi/nsdata/gpio/sig_demo_r.o", dst=>"/home/pi/nsdata/gpio/sig_r.o"},
+                          {src=>"/home/pi/nsdata/gpio/sig_demo_speeddiv.o", dst=>"/home/pi/nsdata/gpio/sig_speeddiv.o"},
+                          {src=>"/home/pi/nsdata/gpio/dig1_demo.o", dst=>$this->{_statuslightfile}} );
+        my $size = @demotrack;
+        for(my $i=0; $i<$size; $i++){
+            print "cp $demotrack[$i]->{src} $demotrack[$i]->{dst}";
+            system "cp $demotrack[$i]->{src} $demotrack[$i]->{dst}";
+        }
+        $this->{_lastdataset}->{datacount} = "demo";
+        $this->{_lastdataset}->{viewcount} = "demo";
+        sleep(1);
     }
 
     sub LDDBpercussItPoly{
@@ -186,37 +327,6 @@ package ns_loopit{
             my @statuslight = ("t", "h150", "l100", "h50", "l100");
             print "sending status light signal\n";
             $this->{_aud}->physSendInstructions($this->{_statuslightfile}, \@statuslight);
-        }
-    }
-
-    sub pipSortDataset{
-        my ($this, $rah_places) = @_;
-#        if ($this->{_soundmode} != 0){
-        @{$rah_places} = sort { $b->{detected_left} <=> $a->{detected_left}    or 
-                                $b->{detected_right} <=> $a->{detected_right}    or 
-                                $a->{distance} <=> $b->{distance} 
-                              } @{$rah_places};
-#        }else{
-#            @{$rah_places} = sort { $b->{detected} <=> $a->{detected}    or 
-#                                    $a->{distance} <=> $b->{distance} 
-#                                  } @{$rah_places};
-#        }
-    }
-
-    sub pipSigSound{
-        my ($this, $rah_places) = @_;
-        my @do;
-        foreach my $rh_pl (@{$rah_places}){
-            if ($rh_pl->{detected_left} || $rh_pl->{detected_right}){
-                print "$rh_pl->{permission_id} detected! Left $rh_pl->{detected_left}. Right $rh_pl->{detected_right}. Distance is $rh_pl->{distance}\n\n";
-                push @do, $rh_pl;
-            }
-        }
-        $this->{_lastdataset}->{datacount} = @do;
-        if (@do){
-            $this->{_aud}->sonicSig($this->{_maxdist}, \@do);
-        }else{
-            $this->{_aud}->resetSonicSig;
         }
     }
 
@@ -272,6 +382,7 @@ package ns_loopit{
         }
         $this->{_aud}->LDDBpercussBasic2($this->{_maxdist}, \@do);
     }
+
 
     sub LDDBcreateDateCondition{
         my $this = shift;
@@ -329,79 +440,6 @@ package ns_loopit{
                         }
         }
         return $sql;
-    }
-
-    sub prepPolygonPlaces{
-        my ($this, $rh_loc) = @_;
-        #print "$sql\n";
-        my $viewFormed = $this->createNearbyView($rh_loc);
-        my $rah = [];
-        if ($viewFormed) {
-          my $rh_view = $this->{_query}->{viewQuery};
-          my $rh_geoquery = $this->{_query}->{geosonQuery};
-          my $option = $this->{_option};
-          my $sql = "SELECT COUNT($rh_view->{keyField}->{name}) FROM $rh_view->{viewName}";
-          $this->{_lastdataset}->{viewcount} = $this->{_db}->runsql_rtnScalar($sql);
-          print "$this->{_lastdataset}->{viewcount} in view \n"; 
-          my $ra_geofield = $this->setupPlaceGeoFields($rh_loc);
-          # Now we go on to the polygon calcs
-          my @fields = ();
-          push @fields, @{$rh_geoquery->{otherSelectFields}};
-          push @fields, @{$ra_geofield};
-          if ($this->{_query}->{geosonQuery}->{options}->{$option}){
-              push @fields, $this->{_query}->{geosonQuery}->{options}->{$option}->{fields};
-          }
-          my %sqlhash = ( fields=>\@fields,
-                      table=>$rh_geoquery->{from},
-                      where=>"",
-  #                    groupbys=>\(),
-                      having=>"",
-                      orderby=>"");
-          #print "running final query...\n";
-          $rah = $this->{_db}->runSqlHash_rtnAoHRef(\%sqlhash, 1);
-          #$this->{_testtools}->printRefArrayOfHashes($rah);
-        }else{
-          print "View formation failed\n";
-        }
-        #print "done\n";
-        return $rah;
-    }
-
-    sub createNearbyView{
-        my ($this, $rh_loc) = @_;
-        print "creating view sub started\n";
-        my $DLen = $this->{_telem}->getDegreeToMetre($rh_loc);
-        my $scoopDist = 600; # this is how far away the points are the sniffer can check. For very large sites, this may cause problems.
-        my $dateCondition = $this->LDDBcreateDateCondition;
-        my $option = $this->{_option};
-        my $rh_sc = $this->{_query}->{viewQuery}->{options}->{$option};
-        my $distlon = $scoopDist/$DLen->{lon};
-        my $distlat = $scoopDist/$DLen->{lat};
-        #Get the dimensions of the query box we are looking in/
-        my %lon = (min=>$rh_loc->{lon} - $distlon, max=>$rh_loc->{lon} +$distlon) ;
-        my %lat = (min=>$rh_loc->{lat} - $distlat, max=>$rh_loc->{lat} +$distlat) ;
-#        my @groupby = ("lon", "lat", "p.completed_date", "p.permission_id");
-  
-        my $rh_view = $this->{_query}->{viewQuery};
-        #first we have to do a view that limits what we are looking at, so we don't have to do complicated polygon calcs on the whole DB!
-        my $groupby = $rh_view->{otherGroupbyFields} . ", $rh_view->{latField}, $rh_view->{lonField}, $rh_view->{keyField}->{table}\.$rh_view->{keyField}->{name}";
-        my $field = "$groupby, $rh_view->{selectOnlyFields}";
-        if (length($rh_sc->{fields}) > 1){
-          $field .= ", $rh_sc->{fields} ";
-        } 
-#        foreach my $f (@{$rh_sc->{ra_fields}}){ $field .= ", $f";}
-        my $from = $rh_view->{from} . $rh_sc->{from}; 
-        my $where =  " WHERE ($rh_view->{lonField} BETWEEN $lon{min} AND $lon{max}) AND " .
-                     "($rh_view->{latField} BETWEEN $lat{min} AND $lat{max}) " . 
-                      $dateCondition . $rh_sc->{where};
-        my $having = $rh_view->{having} . $rh_sc->{having} ;
-        print "dropping existing view...\n";
-        my $sv = $this->{_db}->runsql_rtnSuccessOnly("DROP VIEW IF EXISTS $rh_view->{viewName};");
-        print "creating view...\n";
-        my $sql = "CREATE VIEW $rh_view->{viewName} AS SELECT $field FROM $from $where GROUP BY $groupby $having;";
-        print $sql;
-        my $sq = $this->{_db}->runsql_rtnSuccessOnly($sql);
-        return $sq;
     }
 
     sub LDDBprepPolygonPlaces{

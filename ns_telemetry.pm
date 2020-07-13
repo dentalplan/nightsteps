@@ -107,36 +107,36 @@ package ns_telemetry{
     sub readGPS{
         my $this = shift;
         my $file = "$this->{_gpspath}$this->{_gpslog}";
-        open GPSLOG, "<$file" or die $!;
-        my @gps = <GPSLOG>;
-        my $size = @gps;
-        my $selLine;
+        my $gpscheck = 1;
+        open GPSLOG, "<$file" or $gpscheck = 0;
         my %loc = ();
         $loc{success} = 0;
-    #   print $gps[-1];
-        for (my $i=-1; $i>=($size * -1) && $loc{success} == 0; $i-- ){
-            chomp $gps[$i];
-#            print $gps[$i];
-            if($gps[$i] =~ m/.+ TPV, Time: (.+), Lat: (.+), Lon: (.+), Speed: .+, Heading: (.*)/){
-                $selLine = $gps[$i];
-                $loc{time} = $1;
-                $loc{lat} = $2;
-                $loc{lon} = $3;
-                $loc{course} = $this->{_compass}->readValue;
-#                $loc{course} = $4;
-                print "\n Time: $loc{time} Lon: $loc{lon} Lat: $loc{lat} Course: $loc{course}\n";
-                $loc{success} = 1;
-                $this->{_presPosition} = \%loc;
-                $this->{_indicatorLED}->writeInstructions($this->{_LEDsuccess}->{gps});
-            }else{
-                $loc{success} = 0;
-                $this->{_indicatorLED}->writeInstructions($this->{_LEDwarnings}->{gps});
-            }
-        }
-        $this->{_checks}++;
-        close GPSLOG;
-        if ($this->{_checks} > 300){
-            #behaviour if file size too large!
+        if ($gpscheck){
+          my @gps = <GPSLOG>;
+          my $size = @gps;
+          my $selLine;
+      #   print $gps[-1];
+          for (my $i=-1; $i>=($size * -1) && $loc{success} == 0; $i-- ){
+              chomp $gps[$i];
+  #            print $gps[$i];
+              if($gps[$i] =~ m/.+ TPV, Time: (.+), Lat: (.+), Lon: (.+), Speed: .+, Heading: (.*)/){
+                  $selLine = $gps[$i];
+                  $loc{time} = $1;
+                  $loc{lat} = $2;
+                  $loc{lon} = $3;
+                  $loc{course} = $this->{_compass}->readValue;
+  #                $loc{course} = $4;
+                  print "\n Time: $loc{time} Lon: $loc{lon} Lat: $loc{lat} Course: $loc{course}\n";
+                  $loc{success} = 1;
+                  $this->{_presPosition} = \%loc;
+                  $this->{_indicatorLED}->writeInstructions($this->{_LEDsuccess}->{gps});
+              }else{
+                  $loc{success} = 0;
+                  $this->{_indicatorLED}->writeInstructions($this->{_LEDwarnings}->{gps});
+              }
+          }
+          $this->{_checks}++;
+          close GPSLOG;
         }
 #        print "loc success is $loc{success}\n";
         return \%loc;

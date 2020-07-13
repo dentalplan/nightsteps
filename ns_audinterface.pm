@@ -154,10 +154,6 @@ package ns_audinterface{
         $this->physSendInstructions($file, \@instr);
     }
 
-    sub digWaitOnGPS{
-         
-    }
-
     sub generateEmptySig{
         #my ($this, $siglen) = @_;
         my ($this) = @_;
@@ -168,6 +164,31 @@ package ns_audinterface{
             push @ra, \%instr;
         }
         return \@ra;
+    }
+
+    sub generateEmptyDsig{
+        # Sets up an array of arrays of arrays (seriously) for the whole track.
+        my ($this) = @_;
+        my $dsiglen = $this->{_sonification}->{beats};
+        my @ra;
+        for (my $i=0; $i<$dsiglen; $i++){
+            my @instr = ([]); # Each array contains parallel instruction sets for the datasniffer output
+            push @ra, \@instr;# dsig.py does the work of combining these instructions rather than sorting the whole score here.
+        }
+        return \@ra;
+    }
+
+    sub fillOutDsig{
+        # This sub will add 'do not strike' instructions to every empty point in the instruction array
+        my ($this, $ra_sig) = @_;
+        my $dsiglen = $this->{_sonification}->{beats};
+        for (my $i=0; $i<$dsiglen; $i++){
+            unless ($ra_sig->[$i]->[0]->[0]){
+                my $nullins = {force =>0, dur=>64};
+                push @{$ra_sig->[$i]->[0]}, $nullins;
+            }
+        }
+        return $ra_sig
     }
 
     sub convertAoHtoInstrText{
@@ -181,6 +202,26 @@ package ns_audinterface{
         return \@ra;
     }
 
+    sub convertAoHtoDsigInstrText{
+        #This converts the array of instructions in Nightsteps to a format that dsig.py can read and 
+        #feed to the outputs.
+        my ($this, $ra) = @_;
+        my @ra_out;
+        foreach my $ra_line (@{$ra}){
+          my $text = "";
+          foreach my $ra_set (@{$ra_line}){
+            foreach my $rh (@{$ra_set}){
+              my $text .= "d$rh->{dur}\@f$rh->{force}-";
+            }
+            chop $text;
+            $text .= "|";
+          }
+          chop $text;
+          $text .= "\n";
+          push @ra_out, $text;
+        }
+        return \@ra_out;
+    }
 
     sub resetSonicSig{
         my $this = shift;
@@ -191,8 +232,47 @@ package ns_audinterface{
         }
     }
 
+    sub sonicDsig{
+        my ($this, $maxdist, $rah_do) = @_;
+        foreach my $o (@{$this->{_outputs}}){
+          $o->{ra_sig} = $this->generateEmptyDsig();
+        }
+        my $outputNumber = @{$this->{_outputs}};
+        my $closestdistance = $maxdist; #this value works out which is this closest detected object.
+        my @rules;
+        push @rules, $this->{_sonification}->{rules};
+        foreach my $d (@{$rah_do}){
+          my $detected = 0;
+          my @detectedOnOutput;
+          my $offCentreDistAdj = 10 * $outputNumber; #This is an adjustment to distance based on how 'in focus' an object is.
+          foreach my $o (@{$this->{_outputs}}){
+            if ($d->{$o->{field}}){
+              $offCentreDistAdj -= 10;
+              $detected++;
+              push @detectedOnOutput, $o; #places reference to output in 'detected output' so it can have appropriate actions
+                                          #added to its score.
+            }
+          }
+          if ($detected >= $outputNumber && $d->{distance} < $closestdistance){
+            $closestdistance = $d->{distance};
+          }
+          my $rh_adj = { dur => -2 + int($this->getDistanceRatio($d->{distance} + $offCentreDistAdj, $maxdist + 10, 5, 1) * 7),
+                         force => int($this->getDistanceRatio($d->{distance}, $maxdist, 4, 1) * 40),
+                      };
+          $this->applyRulesToSig($this, $d, $rh_adj, \@detectedOnOutput);
+        }
+        $this->setSpeedDivider($closestdistance, $maxdist);
+        foreach my $o (@{$this->{_outputs}}){
+          print "Writing output to $o->{path}\n";
+          my $outsig = $this->fillOutDsig($o->{ra_sig});
+          my $ra_sigt = $this->convertAoHtoDisgInstrText($outsig);
+          $this->physSendInstructions($o->{path}, $ra_sigt);
+        }
+    }
+
     sub sonicSig{
         my ($this, $maxdist, $rah_do) = @_;
+        #$this->{_testtools}->printRefArrayOfHashes($rah_do);
         foreach my $o (@{$this->{_outputs}}){
           $o->{ra_sig} = $this->generateEmptySig();
         }
@@ -208,7 +288,8 @@ package ns_audinterface{
             if ($d->{$o->{field}}){
               $offCentreDistAdj -= 10;
               $detected++;
-              push @detectedOnOutput, $o;
+              push @detectedOnOutput, $o; #places reference to output in 'detected output' so it can have appropriate actions
+                                          #added to its score.
             }
           }
           if ($detected >= $outputNumber && $d->{distance} < $closestdistance){
@@ -220,26 +301,7 @@ package ns_audinterface{
                          offset =>0,
                          fmod => 0,
                          dvar => 0};
-          my $numberOfRules = @{$this->{_rules}};
-          print $numberOfRules;
-          foreach my $r (@{$this->{_rules}}){
-            my $test = $r->{test};
-            $test =~ s/{/\$d->{/;
-            print "evaluating $test\n";
-            my $result = eval($test);
-            if ($result){
-              print "Success!  $r->{action}\n";
-              $rh_adj = $this->applyEffectsToAction($r, $d, $rh_adj);
-              foreach my $od (@detectedOnOutput){
-                print "implementing actions";
-                foreach my $pos (@{$r->{positions}}){
-                  $this->{_audlib}->addActionToScore($r->{action},[$od->{ra_sig}, $pos, $rh_adj, $r->{arg}]);      
-                }
-              }
-            }else{
-              print "$test failed\n";
-            }
-          }
+          $this->applyRulesToSig($d, $rh_adj, \@detectedOnOutput);
         }
         $this->setSpeedDivider($closestdistance, $maxdist);
         foreach my $o (@{$this->{_outputs}}){
@@ -249,7 +311,37 @@ package ns_audinterface{
         }
     }
 
+    sub applyRulesToSig{
+      # Runs through each of the rules for sonic output (these are located in a json file, which is pointed to by ns_config)
+      # and applies them to the set of instructions based on the database entry detected.
+      my ($this, $d, $rh_adj, $ra_doo) = @_; # d=detected entry, rh_adj=core attributes of the signal determined by distance
+                                             # ra_doo=outputs that are valid for the detected entry
+      print "Applying rules, inspecting data\n";
+      #$this->{_testtools}->printRefHashValues($d);
+      foreach my $r (@{$this->{_rules}}){
+        my $test = $r->{test};
+        $test =~ s/{/\$d->{/g;
+        #$test =~ s/{(.+)}/'$d->{$1}'/;
+        print "field is $1\n";
+        print "evaluating $test\n";
+        my $result = eval($test);
+        if ($result){
+          print "Success!  $r->{action}\n";
+          $rh_adj = $this->applyEffectsToAction($r, $d, $rh_adj);
+          foreach my $od (@{$ra_doo}){
+            print "implementing actions";
+            foreach my $pos (@{$r->{positions}}){
+              $this->{_audlib}->addActionToScore($r->{action},[$od->{ra_sig}, $pos, $rh_adj, $r->{arg}]);      
+            }
+          }
+        }else{
+          print "$test failed\n";
+        }
+      }
+    }
+
     sub applyEffectsToAction{
+        # This applies 'effects' to the sonic output by altering key variables. 
         my ($this, $r, $d, $rh_adj) = @_;
         foreach my $ek (keys %{$this->{_effects}}){
           if ($r->{applyEffects} eq $ek){
@@ -268,59 +360,6 @@ package ns_audinterface{
           }
         }
         return $rh_adj;
-    }
-
-    sub LDDBsonicSig{
-        my ($this, $maxdist, $maxyear, $rah_do) = @_;
-        my $size = @{$rah_do};
-        # these arrays will be written into the sig_l and sig_r files to be picked
-        # up by the noisemakers
-        my $ral = $this->generateEmptySig(21);
-        my $rar = $this->generateEmptySig(21);
-        my $closestdistance = $maxdist;
-        for (my $i=0; $i<$size; $i++){
-            my @arrset;
-            my $offCentreDistAdd = 20;
-            # we only need to adjustments to for applications that are detected.
-            if ($rah_do->[$i]->{detected_left}){
-                push @arrset, $ral;
-                $offCentreDistAdd -= 10; 
-            }
-            if ($rah_do->[$i]->{detected_right}){
-                push @arrset, $rar;
-                $offCentreDistAdd -= 10; 
-            }
-            if ($rah_do->[$i]->{detected_left} && $rah_do->[$i]->{detected_right} && $rah_do->[$i]->{distance} < $closestdistance){
-                $closestdistance = $rah_do->[$i]->{distance};
-            }
-            #one way the device indicates distance is by blanking out elements of the signal until you are
-            # close enough
-            my $cap = 16 - int($this->getDistanceRatio($rah_do->[$i]->{distance}, $maxdist, 10, 0) * 16);
-            # Another is to increase the duration and force of the strike
-            my $da = -2 + int($this->getDistanceRatio($rah_do->[$i]->{distance} + $offCentreDistAdd, $maxdist + 10, 5, 1) * 7);
-            my $df = int($this->getDistanceRatio($rah_do->[$i]->{distance}, $maxdist, 4, 1) * 40);
-            for (my $k=0; $k<$cap; $k++){
-                my $rh_beat = $this->makeBeatData($rah_do->[$i], $k, $da, $df, $maxyear);
-                foreach my $ra (@arrset){
-                   $ra->[$rh_beat->{pos}]->{dur} += $rh_beat->{in};
-                   if ($rh_beat->{force} > 0 && $ra->[$rh_beat->{pos}]->{force} == 0){
-                       $ra->[$rh_beat->{pos}]->{force} += 45 + $rh_beat->{force};
-                   }else{
-                       $ra->[$rh_beat->{pos}]->{force} += $rh_beat->{force};
-                   }
-                }
-            }
-            foreach my $ra (@arrset){
-                $this->makeBeatId($rah_do->[$i]->{permission_id}, $ra);
-            }
-        }
-        my $filel = $this->{_gpoutpath} . "sig_l.o";
-        my $filer = $this->{_gpoutpath} . "sig_r.o";
-        my $ralt = $this->convertAoHtoInstrText($ral);
-        my $rart = $this->convertAoHtoInstrText($rar);
-        $this->setSpeedDivider($closestdistance, $maxdist);
-        $this->physSendInstructions($filel, $ralt);
-        $this->physSendInstructions($filer, $rart);
     }
 
     sub setSpeedDivider{
@@ -343,125 +382,6 @@ package ns_audinterface{
         my $maxDistAdj = $maxdist * ($maxdist/$curve + ($curve*2));
         my $ratio = $diffDistAdj/$maxDistAdj;
         return $ratio;
-    }
-
-    sub makeBeatId{
-        my ($this, $id, $ra) = @_;
-        my @number = split( //,$id);
-        my $size = @number;
-        for (my $i=0; $i<($size-1); $i++){
-            #print "number $number[$i]\n";
-            my $pos = $number[$i] + $number[$i+1];
-            #print "Examing position $pos\n";
-            if ($ra->[$pos]->{dur} > 0){
-                #print "Adding to $pos";
-                $ra->[$pos]->{dur}++;
-                $ra->[$pos]->{force}++;
-            }
-        }
-    }
-    
-    sub makeBeatData{
-        my ($this, $rh, $i, $da, $df, $maxyear) = @_;
-        my $rtn;
-        #print "Setting up distance-dur: $da, distance-force: $df\n";
-        switch($i){
-            case 0  {   #permission date beat 
-                      my $pos = 15;
-                      if ($rh->{permissionyear} > ($maxyear - 5)){
-                          my $pos = 3;
-                      }elsif ($rh->{permissionyear} > ($maxyear - 10)){
-                          my $pos = 9;
-                      }
-                      $rtn = {pos=>$pos, in=>11 + $da, force=>$df};
-                  }
-            case 1  {   #not yet completed beat 1
-                        $rtn = {pos=>7, in=>0, force=>0};
-                        if ($rh->{status_rc} eq "STARTED" || $rh->{status_rc} eq "SUBMITTED" || $rh->{status_rc} eq "PENDING"){
-                            $rtn->{in} = 11 + $da;
-                            $rtn->{force} = $df;
-                        }
-                    }
-            case 2  {   #standard distance beat
-                        $rtn = {pos=>19, in=>7 + $da, force=>$df};
-                    }
-            case 3  {   #completed beat 1
-                        $rtn = {pos=>18, in=>0, force=>0};
-                        if ($rh->{status_rc} eq "COMPLETED"){
-                            $rtn->{in} = 9 + $da;
-                            $rtn->{force} = $df;
-                        }
-                    }
-            case 4  {   #when completed beat
-                        my $pos = 17;
-                        my $in = 0;
-                        my $force = 0;
-                        if ($rh->{status_rc} eq "COMPLETED"){
-                            $in = 9 + $da;
-                            $force = $df;
-                            if ($rh->{completedyear} > ($maxyear - 5)){
-                                my $pos = 5;
-                            }elsif ($rh->{completedyear} > ($maxyear - 10)){
-                                my $pos = 11;
-                            }
-                        }
-                        $rtn = {pos=>$pos, in=>$in, force=>$df};
-                    }
-            case 5  {   #standard distance beat
-                        $rtn = {pos=>16, in=>7 + $da, force=>$df};
-                    }
-            case 6  {   #residential units beat 1
-                        $rtn = {pos=>10, in=>0, force=>0};
-                        if ($rh->{exist_res_units_yn} eq "Y"){
-                            $rtn->{in} = 5 + $da;
-                            $rtn->{force} = $df;
-                        }
-                    }
-            case 7  {   #non-res use beat 1
-                        $rtn = {pos=>13, in=>0, force=>$df};
-                        if ($rh->{exist_non_res_use_yn} eq "Y"){
-                            $rtn->{in} = 5 + $da;
-                            $rtn->{force} = $df;
-                        }
-                    }
-            case 8  {   #standard distance beat
-                        $rtn = {pos=>12, in=>7 + $da, force => $df}
-                    }
-            case 9  {   #residential units beat 1 
-                        $rtn = {pos=>1, in=>0, force=>0};
-                        if ($rh->{proposed_res_units_yn} eq "Y"){
-                            $rtn->{in} = 5 + $da;
-                            $rtn->{force} = $df;
-                        }
-                    }
-            case 10  {  #non-res use beat 2
-                        $rtn = {pos=>6, in=>0, force=>0};
-                        if ($rh->{proposed_non_res_use_yn} eq "Y"){
-                            $rtn->{in} = 5 + $da;
-                            $rtn->{force} = $df;
-                        }
-                     }
-            case 11  {  #standard distance beat
-                        $rtn = {pos=>8, in=>7 + $da, force=>$df}
-                     }
-            case 12  {
-                        $rtn = {pos=>2, in=>0, force=>0};
-                        if ($rh->{status_rc} eq "STARTED" || $rh->{status_rc} eq "SUBMITTED"){
-                            $rtn->{in} = 11 + $da;
-                            $rtn->{force} = $df;
-                        }
-                     }
-            case 13  {  $rtn = {pos=>4, in=>7 + $da, force=>$df} }
-            case 14  {
-                        $rtn = {pos=>14, in=>0, force=>$df};
-                        if ($rh->{status_rc} eq "COMPLETED"){
-                            $rtn->{in} = 9 + $da;
-                            $rtn->{force} = $df;
-                        }
-                     }
-            case 15  {  $rtn = {pos=>0, in=>7 + $da, force=>$df} }
-        }
-        return $rtn
     }
 }
 1;
