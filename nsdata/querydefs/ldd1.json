@@ -1,7 +1,7 @@
 {
   "databaseName":"ldd",
   "databaseType":"Pg",
-  "databasePw":"cZMUhxxjKS8zxgDLBqverJEF2qZns8",
+  "databasePw":"",
   "minDate":{"year":2007, "month":9,"day":1},
   "maxDate":{"year":2019, "month":8,"day":31},
   "viewQuery":{
