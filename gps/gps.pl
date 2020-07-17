@@ -5,11 +5,23 @@ use Data::Dumper qw{Dumper};
 
 #sleep 5; #tells it to wait 5 sec so it doesn't crash out due to lack of time value
 my $obj=Net::GPSD3->new(host=>"localhost", port=>"2947");
-my $pt=$obj->watch;
+$obj->watch;
+#for(my $i=0; $i<300; $i++){
+#  my $pt=$obj->poll;
+#  my $fix=$pt->fix;
+#  #  print $fix;
+#  #  &printHash($fix);
+#  print "\n############ POLL OBJECT #################\n\n";
+#  print Dumper($pt);
+#  print "\n############ FIX OBJECT #################\n\n";
+#  print Dumper($fix);
+#  # # print "tpv:";
+#  # # &printArray($pt->{st});
+#  sleep(1);
+#}
 #print Dumper($pt);
 #my $j=$obj->json;
 #print Dumper($j);
-
 
 sub printHash{
 
