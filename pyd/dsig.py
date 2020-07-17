@@ -12,10 +12,10 @@ from collections import deque
 
 #digOut = [DigitalOutputDevice(5), DigitalOutputDevice(6)]
 out = [PWMOutputDevice(12), PWMOutputDevice(13), DigitalOutputDevice(23)]
-outType = ["pwm","pwm","dig", "dig"]
-state = [0.0,0.0,0.0,0.0]
-basebeat = 64.0
-baseSpeedDiv = 270.0
+outType = ["pwm","pwm","dig" ]
+state = [0.0,0.0,0.0]
+basebeat = 48.0
+baseSpeedDiv = 240.0
 speedDivider = baseSpeedDiv 
 beatlength = basebeat/speedDivider
 magnetic = [True,True,True,False]
@@ -26,7 +26,6 @@ statepath = ["/home/pi/nsdata/gpio/mag1.s", "/home/pi/nsdata/gpio/mag2.s", "/hom
 #make two double ended queues for instructions, one for eeach of the digital outs
 #queuedInstruction = [deque(['s']), deque(['s']), deque(['s'])]
 activeInstruction = [ {'inspecting':0, 'timepassed':0.0, 'instr': "", 'instrset': [{'force':0.0, 'dur':64.0}]},
-                      {'inspecting':0, 'timepassed':0.0, 'instr': "", 'instrset': [{'force':0.0, 'dur':64.0}]},
                       {'inspecting':0, 'timepassed':0.0, 'instr': "", 'instrset': [{'force':0.0, 'dur':64.0}]},
                       {'inspecting':0, 'timepassed':0.0, 'instr': "", 'instrset': [{'force':0.0, 'dur':64.0}]} ]
 
@@ -85,11 +84,11 @@ def adjDurAndForce(instr):
     return instr
 
 def processLineset(ls):
-    lineset = ls.split("-")
+    lineset = ls.split(",")
     iset = []
     ttldur = 0.0
     for l in lineset:
-      match = re.match(r'd(\d+)@f(\d+)', l, re.M|re.I)
+      match = re.match(r'd(\d+)@f(-?\d+)', l, re.M|re.I)
       if match:
         dur = float(match.group(1))
         force = float(match.group(2))/100.0
@@ -119,21 +118,25 @@ def getInstrFromFile(fileName, i, prevInstr):
                   maxdur = iset['ttldur']
                 instrSets.append(iset)
               setLen = len(instrSets)
-              if setLen > 1:
+              if setLen > 1: 
                 combinedInstr = combineInstrSets(instrSets, maxdur)
-                combinedInstr['uses'] = 0 
+                #combinedInstr['uses'] = 0 
+                #print "a. adding instr " + lines[i] + "to library"
                 instrLibrary[lines[i]] = list(combinedInstr)
                 resolvedInstr = adjDurAndForce(combinedInstr)
                 newInstr['instrset'] = list(resolvedInstr['set'])    
               elif setLen == 1:
+                #print "b. adding instr " + lines[i] + "to library"
                 instrLibrary[lines[i]] = list(instrSets[0])
-                instrSets[0]['uses'] = 0
+                #instrSets[0]['uses'] = 0
                 resolvedInstr = adjDurAndForce(instrSets[0])
                 newInstr['instrset'] = list(resolvedInstr['set'])
             else:
               newInstr['instr'] = adjDurAndForce(lines[i])
-              print "found instr in library\n" 
+#              print "found instr in library\n" 
           else:
+ #           print "i = " + str(i) + "; lines[i] = " + lines[i]
+            #instrLibrary[lines[i]]['uses'] += 1
             newInstr['instr'] = str(prevInstr['instr'])
             newInstr['instrset'] = list(prevInstr['instrset'])
         if len(newInstr) == 0:
@@ -184,9 +187,9 @@ def logOutput(actIn, i, fn):
 
 
 i = 0
-instrSize = [10,10,10,10]
+instrSize = [24,24,24]
 while True:
-    speedDivider = getSpeedDivFromFile(speedDivPath) # Get the present 'SpeedDiv' file - higher numbers = faster.
+    #speedDivider = getSpeedDivFromFile(speedDivPath) # Get the present 'SpeedDiv' file - higher numbers = faster.
     beatlength = basebeat/speedDivider               # The beatlength here is the base 'beat' value divider by the speed div - this is how 
                                                      # | many seconds the beat will last
     for f in range(0, len(filepath)):                # It's time to check to see if there are any new rhythm instructions in each designated filepath

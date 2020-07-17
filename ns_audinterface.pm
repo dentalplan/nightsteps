@@ -316,14 +316,14 @@ package ns_audinterface{
       # and applies them to the set of instructions based on the database entry detected.
       my ($this, $d, $rh_adj, $ra_doo) = @_; # d=detected entry, rh_adj=core attributes of the signal determined by distance
                                              # ra_doo=outputs that are valid for the detected entry
-      print "Applying rules, inspecting data\n";
+      #print "Applying rules, inspecting data\n";
       #$this->{_testtools}->printRefHashValues($d);
       foreach my $r (@{$this->{_rules}}){
         my $test = $r->{test};
         $test =~ s/{/\$d->{/g;
         #$test =~ s/{(.+)}/'$d->{$1}'/;
-        print "field is $1\n";
-        print "evaluating $test\n";
+        #print "field is $1\n";
+        #print "evaluating $test\n";
         my $result = eval($test);
         if ($result){
           print "Success!  $r->{action}\n";
