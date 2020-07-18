@@ -11,7 +11,7 @@ package ns_logger{
         my $rh_time = shift;
         my $i = 0;
         my $rht = {year=>$rh_time->[5]+1900, month=>$rh_time->[4]+1, day=>$rh_time->[3], hour=>$rh_time->[2], min=>$rh_time->[1]};
-        my $ts = "$rht->{year}-$rht->{month}-$rht->{day}_$rht->{hour}-$rht->{min}";
+        my $ts = sprintf '%04d-%02d-%02d-%02d%02d', $rht->{year}, $rht->{month}, $rht->{day}, $rht->{hour}, $rht->{min};
         my $fname = "/home/pi/nsdata/log/log$ts-" . (sprintf("%03d",$i)) . ".txt";
         while (-f $fname) {
             $fname = "/home/pi/nsdata/log/log$ts-" . (sprintf("%03d",++$i)) . ".txt";

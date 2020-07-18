@@ -24,6 +24,7 @@ package ns_loopit{
     use ns_logger;
     use Switch;
     use Time::Piece;
+    use Data::Dumper;
 
     sub new{
         my $class = shift;
@@ -40,7 +41,6 @@ package ns_loopit{
             _lastdataset => {viewcount=>0, viewIDs=>{}, detectcount=>0, detectcount_l=>0, detectcount_r=>0, detectIDs_l=>{}, detectcount_r=>{}},
             _testtools => ns_testtools->new,
             _telem => ns_telemetry->new,
-            _aud => ns_audinterface->new($rh->{query}->{sonification}, $rh->{option}),
             _db => ns_dbinterface->new,
             _dbfilepath => '/home/pi/nsdata/',
             _t => Time::Piece->new,      
@@ -94,8 +94,22 @@ package ns_loopit{
         my $this = shift;
         print "$this->{_query}->{databaseName}, $this->{_query}->{databaseType})\n";
         $this->{_db}->connectDB($this->{_query}->{databaseName}, $this->{_query}->{databaseType}, $this->{_query}->{databasePw});
+        $this->{_pcField} = $this->{_query}->{viewQuery}->{options}->{$this->{_option}}->{percentileFieldAndQuery};
+        my $pc = $this->{_query}->{percentileQuery}->{$this->{_pcField}};
+        $this->{_thres}->{_pcField} = $this->{_pcField};
+        $this->{_thres}->{_pcBands} = $pc->{bands};
+        $this->{_thres}->{_distanceBands} = $this->{_query}->{listenSettings};
+        my $sql = $pc->{query};
+        my $ra = $this->{_db}->runsql_rtnArrayRef($sql);
+        my $size = @{$ra};
+        for (my $i=0; $i<$size; $i++){
+          $this->{_thres}->{_pcBands}->[$i+1]->{minval} = $ra->[$i]; #the PC band is at $i+1 because the lowest band has a max val i.e zero! 
+        }
+        print "setting up aud\n";
+        $this->{_aud} = ns_audinterface->new($this->{_query}->{_sonification}, $this->{_thres}, $this->{_option});
         $this->{_aud}->{_minyear} = $this->{_query}->{minDate}->{year};
         $this->{_aud}->{_maxyear} = $this->{_query}->{maxDate}->{year};
+        print Dumper($this->{_aud}->{_thres});
     }
 
     sub percussItPoly{
@@ -108,8 +122,8 @@ package ns_loopit{
             if ($rah_places){
                 print "sending data light signal\n";
                 my @datalight = ("q", "h100", "l100");
+                $this->pipSigSound($rah_places);
                 $this->{_aud}->physSendInstructions($this->{_datalightfile}, \@datalight);
-                $this->pipSigSound($rah_places)
             }else{
                 $this->{_aud}->resetSonicSig; 
                 print "sending data light signal\n";
@@ -120,7 +134,7 @@ package ns_loopit{
             $this->{_aud}->physSendInstructions($this->{_statuslightfile}, \@statuslight);
 #        }elsif ($this->{_soundmode} == 2){
         }else{
-            $this->{_aud}->resetSonicSig; 
+            $this->{_aud}->createEmptyScore; 
             my @statuslight = ("t", "h150", "l100", "h50", "l100");
             print "sending status light signal\n";
             $this->{_aud}->physSendInstructions($this->{_statuslightfile}, \@statuslight);
@@ -147,9 +161,9 @@ package ns_loopit{
         }
         $this->{_lastdataset}->{datacount} = @do;
         if (@do){
-            $this->{_aud}->sonicSig($this->{_maxdist}, \@do);
+            $this->{_aud}->createScore(\@do);
         }else{
-            $this->{_aud}->resetSonicSig;
+            $this->{_aud}->createEmptyScore;
         }
     }
 
