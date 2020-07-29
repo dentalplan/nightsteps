@@ -20,12 +20,12 @@ then
     python /home/pi/nightsteps/pyd/gpio-a-all.py &
 fi
 
-ck4=$(ps aux | grep /home/pi/nightsteps/pyd/compass.py | grep -v grep | wc -l)
-echo $ck3
+ck4=$(ps aux | grep /home/pi/nightsteps/pyd/read_lsmcompass.py | grep -v grep | wc -l)
+echo $ck4
 if [ $ck4 -eq 0 ]
 then
-    echo 'init compass'
-    python /home/pi/nightsteps/pyd/compass.py &
+    echo 'init lsm compass'
+    python /home/pi/nightsteps/pyd/read_lsmcompass.py &
 fi
 
 ck2=$(ps aux | grep /home/pi/nightsteps/nightsteps_run.pl | grep -v grep | wc -l)
@@ -39,14 +39,12 @@ then
     cp /home/pi/nsdata/gpio/dig_startlights.o /home/pi/nsdata/gpio/dig2.o &
 fi
 
-#ck5=$(ps aux | grep /home/pi/nightsteps/pyd/dig.py | grep -v grep | wc -l)
-ck5=$(ps aux | grep /home/pi/nightsteps/pyd/sig.py | grep -v grep | wc -l)
+ck5=$(ps aux | grep /home/pi/nightsteps/pyd/dsig.py | grep -v grep | wc -l)
 echo $ck5
 if [ $ck5 -eq 0 ]
 then
-    echo 'init sig out'
-#    python /home/pi/nightsteps/pyd/dig.py &
-    python /home/pi/nightsteps/pyd/sig.py &
+    echo 'init dsig out'
+    python /home/pi/nightsteps/pyd/dsig.py &
 fi
 
 ck6=$(ps aux | grep /home/pi/nightsteps/pyd/dig.py | grep -v grep | wc -l)
