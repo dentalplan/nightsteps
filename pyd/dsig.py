@@ -5,32 +5,33 @@ import time
 import re
 import random
 from collections import deque
-
-#########################################################################
-# instruction | behaviour                                               #
-#-------------|---------------------------------------------------------#
+import pprint
 
 #digOut = [DigitalOutputDevice(5), DigitalOutputDevice(6)]
 out = [PWMOutputDevice(12), PWMOutputDevice(13), DigitalOutputDevice(23)]
 outType = ["pwm","pwm","dig" ]
 state = [0.0,0.0,0.0]
 basebeat = 48.0
-baseSpeedDiv = 200.0
-speedDivider = baseSpeedDiv 
+speedDivider = 200.0 
 beatlength = basebeat/speedDivider
-magnetic = [True,True,True,False]
+magnetic = [True,True,False]
 #look in the following files for instructions
-speedDivPath = "/home/pi/nsdata/gpio/sig_speeddiv.o"
 filepath = ["/home/pi/nsdata/gpio/dsig_r.o", "/home/pi/nsdata/gpio/dsig_l.o", "/home/pi/nsdata/gpio/dsig_i.o"]
 statepath = ["/home/pi/nsdata/gpio/mag1.s", "/home/pi/nsdata/gpio/mag2.s", "/home/pi/nsdata/gpio/mag_null.s"]
-#make two double ended queues for instructions, one for eeach of the digital outs
-#queuedInstruction = [deque(['s']), deque(['s']), deque(['s'])]
-activeInstruction = [ {'inspecting':0, 'timepassed':0.0, 'instr': "", 'instrset': [{'force':0.0, 'dur':64.0}]},
-                      {'inspecting':0, 'timepassed':0.0, 'instr': "", 'instrset': [{'force':0.0, 'dur':64.0}]},
-                      {'inspecting':0, 'timepassed':0.0, 'instr': "", 'instrset': [{'force':0.0, 'dur':64.0}]} ]
-
-defaultInstruction = {'force':0.0, 'dur':basebeat}
+#the active instruction contains both instructions, and data on the processing of the instruction
+#  inspecting: the list element it is currently being looked at, starts at 0
+#  timepassed: how much time has passed while looking at this instruction, starts at 0.0
+#  instr:      the original received instruction text from the filepath
+#  instrset:   the instruction text broken down into a list of pin states, with force and duration.
+activeInstruction = [ {'inspecting':0, 'timepassed':0.0, 'instr': "", 'instrset': [{'force':0.0, 'dur':basebeat}]},
+                      {'inspecting':0, 'timepassed':0.0, 'instr': "", 'instrset': [{'force':0.0, 'dur':basebeat}]},
+                      {'inspecting':0, 'timepassed':0.0, 'instr': "", 'instrset': [{'force':0.0, 'dur':basebeat}]} ]
+#this is the fallback instruction element if an instruction is not present, or cannot be read 
+defaultInstr = {'force':0.0, 'dur':basebeat}
+#the instrLibrary is a set of already processed instructions. This lets the datasniffer run more efficiently once
+#you have locked on to a signal/
 instrLibrary = {};
+pp = pprint.PrettyPrinter(indent=4)
 
 for sp in statepath:
     with open(sp, "w") as s:
@@ -39,14 +40,15 @@ for sp in statepath:
 #for instr in activeInstruction:
 #    instr.clear()
 
-def combineInstrSets(instrParts, maxdur):
+def combineInstrSets(instrCols, maxdur):
+    start = time.time()
     comboInstr = {'ttldur':maxdur, 'set':[]}
     ele = {'force':0.0, 'dur':0.0}
 #    print "max dur is " + str(maxdur)
     for d in range(0,int(maxdur)):
 #      print "examining dur unit " + str(d)
       force = 0.0
-      for ip in instrParts:
+      for ip in instrCols:
         p = ip['place']
         if p < ip['length']:
           ins = ip['set'][p]
@@ -55,6 +57,7 @@ def combineInstrSets(instrParts, maxdur):
           if ins['dur'] + ip['durlapsed'] <= d+1:
             ip['durlapsed'] += ins['dur']
             ip['place'] += 1
+      #if our total force for all colums equals present force, let's add one...
       if force == ele['force']:
         ele['dur'] += 1.0
 #        print "continuing.. add 1 to dur"
@@ -64,7 +67,59 @@ def combineInstrSets(instrParts, maxdur):
         ele = {'force':force, 'dur':1.0}
     comboInstr['set'].append(ele)
 #    printFinalComboInstr(comboInstr)
+    end = time.time()
+    print "CombineInstrSets1: " + str(end-start)
     return comboInstr
+
+def combineInstrSets2(instrCols, maxdur):
+# this is the new version, with improvement performance in most scenarios
+#    start = time.time()
+    comboInstr = {'ttldur':maxdur, 'set':[]}
+    ele = {'force':0.0, 'dur':0.0}
+#    print "max dur is " + str(maxdur)
+    d = 0
+    while d < maxdur:
+#    for d in range(0,int(maxdur)):
+#      print "examining dur unit " + str(d)
+      force = 0.0
+      presDur = []
+      for ip in instrCols:
+        p = ip['place']
+        if p < ip['length']:
+          presDur.append(ip['set'][p]['dur'])
+      if len(presDur)>0:
+        dp = min(presDur)
+        d += dp
+      else:
+  #      print "no min found"
+        dp = 0
+        d = maxdur
+  #    print "dp is " + str(dp)
+      for ip in instrCols:
+        p = ip['place']
+        if p < ip['length']:
+          ins = ip['set'][p]
+#          print "adding " + str(ins['force']) + " to force"
+          force += ins['force']
+          if ins['dur']  <= dp:
+            ip['place'] += 1
+   #         print "Moving place"
+          else:
+            ins['dur'] -= dp
+      #if our total force for all colums equals present force, let's add one...
+    #  print "force is " + str(force) 
+      ele['force'] = force
+      ele['dur'] += dp
+     # print "starting new instruction stage"
+      comboInstr['set'].append(ele)
+      ele = {'force':force, 'dur':0.0}
+      #print str(d) + " out of " + str(maxdur)
+#    pp.pprint(comboInstr)
+#    printFinalComboInstr(comboInstr)
+#    end = time.time()
+#    print "CombineInstrSets2: " + str(end-start)
+    return comboInstr
+
 
 def printFinalComboInstr(comboInstr):
     print "Outputting combined instr"
@@ -88,10 +143,10 @@ def processLineset(ls):
     iset = []
     ttldur = 0.0
     for l in lineset:
-      match = re.match(r'd(\d+)@f(-?\d+)', l, re.M|re.I)
+      match = re.match(r'd([0-9]+(\.[0-9]+)?)@f(-?\d+)', l, re.M|re.I)
       if match:
         dur = float(match.group(1))
-        force = float(match.group(2))/100.0
+        force = float(match.group(3))/100.0
         ele = {'force': force, 'dur': dur}
         ttldur += ele['dur']
         iset.append(ele)
@@ -99,6 +154,9 @@ def processLineset(ls):
     return rtn
 
 def getInstrFromFile(fileName, i, prevInstr):
+    #This pulls out a line from the score file as designated by i
+    #If there are multiple instruction columns, it will resolve them
+    #It will also log resolved instructions in the instruction library, to save on future processing
     with open(fileName) as f:
         lines = f.read().splitlines()
         newInstr ={'inspecting':0, 'timepassed':0.0, 'instr': "", 'instrset': []}
@@ -108,6 +166,7 @@ def getInstrFromFile(fileName, i, prevInstr):
             try:
               newInstr['instrset'] = instrLibrary[lines[i]]['set']
             except:
+#              print "no instr in library:" + lines[i] + "\n" 
               newInstr['instr'] = lines[i]
               instrSets = []
               linesets = lines[i].split("|")
@@ -119,45 +178,44 @@ def getInstrFromFile(fileName, i, prevInstr):
                 instrSets.append(iset)
               setLen = len(instrSets)
               if setLen > 1: 
-                combinedInstr = combineInstrSets(instrSets, maxdur)
-                #combinedInstr['uses'] = 0 
-                #print "a. adding instr " + lines[i] + "to library"
-                instrLibrary[lines[i]] = list(combinedInstr)
-                resolvedInstr = adjDurAndForce(combinedInstr)
-                newInstr['instrset'] = list(resolvedInstr['set'])    
+#                print lines[i]
+                combinedInstr = combineInstrSets2(instrSets, maxdur)
               elif setLen == 1:
-                #print "b. adding instr " + lines[i] + "to library"
-                instrLibrary[lines[i]] = list(instrSets[0])
-                #instrSets[0]['uses'] = 0
-                resolvedInstr = adjDurAndForce(instrSets[0])
-                newInstr['instrset'] = list(resolvedInstr['set'])
+                combinedInstr = instrSets[0]
+              if setLen > 0:
+                resolvedInstr = adjDurAndForce(combinedInstr)
+                instrLibrary[lines[i]] = resolvedInstr
+                newInstr['instrset'] = list(resolvedInstr['set'])    
             else:
-              newInstr['instr'] = adjDurAndForce(lines[i])
-#              print "found instr in library\n" 
+              newInstr['instr'] = lines[i]
+#              print "found instr in library:" + lines[i] + "\n" 
           else:
  #           print "i = " + str(i) + "; lines[i] = " + lines[i]
             #instrLibrary[lines[i]]['uses'] += 1
+#            print "Repeating prev instr:" + lines[i] + "\n" 
             newInstr['instr'] = str(prevInstr['instr'])
             newInstr['instrset'] = list(prevInstr['instrset'])
         if len(newInstr) == 0:
-          newInstr['instrset'].append(defaultInstruction)  
+          newInstr['instrset'].append(defaultInstr)  
         return newInstr
 
-def getSpeedDivFromFile(fileName):
-    with open(fileName) as f:
-        line = f.read()
-        try:
-            rtn = float(line)
-        except:
-            return baseSpeedDiv
-        else:
-            if (rtn > baseSpeedDiv): 
-                return rtn
-            else:
-                return baseSpeedDiv
+#An instrSet is a column of instructions for this line of the score
 
-def pauseCompass(onoff):
-    with open(statepath[f], "w") as s:
+#def getSpeedDivFromFile(fileName):
+#    with open(fileName) as f:
+#        line = f.read()
+#        try:
+#            rtn = float(line)
+#        except:
+#            return baseSpeedDiv
+#        else:
+#            if (rtn > baseSpeedDiv): 
+#                return rtn
+#            else:
+#                return baseSpeedDiv
+
+def pauseCompass(onoff, fp):
+    with open(statepath[fp], "w") as s:
         s.write(onoff)
         s.close()
     if onoff == "1":
@@ -165,18 +223,20 @@ def pauseCompass(onoff):
     else:
         return False 
 
-def setSignalToNewValue(sig):
+def setSignalToNewValue(sig, fp):
     if sig > 0.0:
-        if magnetic[f]:
-            pauseCompass("1")
-        elif magnetic[f]:
-            pauseCompass("0")
-    if outType[f] == "pwm":
-        out[f].value = sig
-    elif outType[f] == "dig":
+        if magnetic[fp]:
+            pauseCompass("1", fp)
+        elif magnetic[fp]:
+            pauseCompass("0", fp)
+    else:
+        pauseCompass("0", fp)
+    if outType[fp] == "pwm":
+        out[fp].value = sig
+    elif outType[fp] == "dig":
         if sig > 0:
-            out[f].on() 
-        else: out[f].off()
+            out[fp].on() 
+        else: out[fp].off()
 
 def logOutput(actIn, i, fn):
     with open('/home/pi/nsdata/gpio/dsig-log/' + fn + '.o', 'a') as logfile:
@@ -185,29 +245,28 @@ def logOutput(actIn, i, fn):
         po += str(i) + "," + str(e['dur']) + "," + str(e['force']) + "\n" 
       logfile.write(po)
 
-
 i = 0
 instrSize = [24,24,24]
 while True:
     #speedDivider = getSpeedDivFromFile(speedDivPath) # Get the present 'SpeedDiv' file - higher numbers = faster.
-    beatlength = basebeat/speedDivider               # The beatlength here is the base 'beat' value divider by the speed div - this is how 
-                                                     # | many seconds the beat will last
-    for f in range(0, len(filepath)):                # It's time to check to see if there are any new rhythm instructions in each designated filepath
-        activeInstruction[f] = getInstrFromFile(filepath[f], i, activeInstruction[f])
-    t = beatlength                                       # The value t is set to the whole duration of a standard beat
+    #beatlength = basebeat/speedDivider               # The beatlength here is the base 'beat' value divider by the speed div - this is how 
+                                                     # | many seconds the beat will last --- but now speedDiv is constant, no need to recalc this
+    for fp in range(0, len(filepath)):                # It's time to check to see if there are any new rhythm instructions in each designated filepath
+        activeInstruction[fp] = getInstrFromFile(filepath[fp], i, activeInstruction[fp])
+    t = beatlength                                       # The value t is set to the whole duration of a standard beat - t will diminish as the beat resolves
     lasttime = time.time()
     while (t > 0.0):
-        for f in range(0, len(filepath)):
-            p = activeInstruction[f]['inspecting']
-            if i < instrSize[f] and p < len(activeInstruction[f]['instrset']) :
-              instr = activeInstruction[f]['instrset'][p]
+        for fp in range(0, len(filepath)):
+            p = activeInstruction[fp]['inspecting']
+            if i < instrSize[fp] and p < len(activeInstruction[fp]['instrset']) :
+              instr = activeInstruction[fp]['instrset'][p]
              # print activeInstruction[f]['instrset']
              # print instr
-              if state[f] != instr['force']:
-                  state[f] = instr['force']
-                  setSignalToNewValue(instr['force'])
-              if (beatlength - instr['dur'] - activeInstruction[f]['timepassed']) > t:
-                  activeInstruction[f]['inspecting'] += 1
+              if state[fp] != instr['force']:
+                  state[fp] = instr['force']
+                  setSignalToNewValue(instr['force'], fp)
+              if (beatlength - instr['dur'] - activeInstruction[fp]['timepassed']) > t:
+                  activeInstruction[fp]['inspecting'] += 1
         nowtime = time.time() 
         gap = nowtime - lasttime
         t -= gap
@@ -218,6 +277,6 @@ while True:
 #    logOutput(activeInstruction[1], i, "l")
     i += 1
 #    print "now processing score position " + str(i)
-    for f in range (0, len(filepath)):
-        if i >= instrSize[f]:
+    for fp in range (0, len(filepath)):
+        if i >= instrSize[fp]:
             i = 0
