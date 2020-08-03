@@ -100,9 +100,9 @@ package ns_telemetry{
         return $rtn;
     }
 
-    sub checkShapesOverlap{
-      my ($this, $poly1, $poly2) = @_;
-    }
+#    sub checkShapesOverlap{
+#      my ($this, $poly1, $poly2) = @_;
+#    }
 
     sub readGPS{
         my $this = shift;
