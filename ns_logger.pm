@@ -25,8 +25,10 @@ package ns_logger{
         my $headings = '"time","gpstime","lat","lon","compass","daterange_state","daterange_upper","daterange_lower","logicsound","sniffversion","sniffvalue","viewcount","datacount","gpio-a-all.py","compass.py","sig.py","dig.py"';
         print "dsig logging is $this->{_dsigLogging}\n";
         if ($this->{_dsigLogging}){
+            print "adding headers\n";
             my $ra_dsig = $this->{_loop}->{_lastdataset}->{dsig};
             foreach my $out(@{$ra_dsig}){
+              print "adding heading\n";
               $headings .= ',"' + $out->{field} + '_file"';
             }
         }
@@ -84,9 +86,9 @@ package ns_logger{
         my $i = 0;
         $dsigLogFile[0] = "/home/pi/nsdata/log/dsig/$this->{_ts}-0-" . (sprintf("%07d",$i)) . ".o";
         while (-f $dsigLogFile[0]) {
-            $dsigLogFile[0] = "/home/pi/nsdata/log/dsig/$this->{_ts}-0-" . (sprintf("%07d",++$i)) . ".o";
+          $dsigLogFile[0] = "/home/pi/nsdata/log/dsig/$this->{_ts}-0-" . (sprintf("%07d",++$i)) . ".o";
         }
-        my $rtn = $dsigLogFile[0];
+        my $rtn = ",$dsigLogFile[0]";
         my $ra_dsig = $this->{_loop}->{_lastdataset}->{dsig};
         my $size = @{$ra_dsig};
         for (my $k=1; $k<$size; $k++){
