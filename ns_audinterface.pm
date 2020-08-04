@@ -87,6 +87,7 @@ package ns_audinterface{
       }
     }
     $this->outputScore;
+    return $this->{_outputs};
   }
 
   sub createEmptyScore{
@@ -97,12 +98,13 @@ package ns_audinterface{
       my $ra_instr = $this->generateEmptyColumn;
       push @{$out->{ra_sig}}, $ra_instr;
     }
-    $this->outputScore; 
+    $this->outputScore;
+    return $this->{_outputs};
   }
 
   sub generateScoreColumn{
     my ($this, $rh_do, $rh_attr, $out, $distthres) = @_;
-    print "generating Score column\n";
+    #print "generating Score column\n";
     my $ra_instr = [];
     #print Dumper($distthres);
     foreach my $t (@{$distthres}){
@@ -121,16 +123,16 @@ package ns_audinterface{
       }
       $rh_attr->{solstr} += $solbonus; 
     }
-    print Dumper($rh_attr);
+    #print Dumper($rh_attr);
     if ($rh_attr->{repeats} > 0){
-      my $base = $this->generateBase($rh_do->{descr});
+      my $base = $this->generateBase($rh_do->{descr}, $rh_attr->{rhythmstr});
       my $ra_rhythm = $this->processBaseIntoRhythm($base, $rh_attr->{rhythmstr});
       $ra_instr = $this->convertRhythmIntoInstr($rh_attr, $ra_rhythm);
     }else{
-      print "no repeats\n";
+      #print "no repeats\n";
       $ra_instr = $this->generateEmptyColumn;
     }
-    print "pre returned instr:\n";
+    #print "pre returned instr:\n";
     return $ra_instr;
   }
 
@@ -168,7 +170,7 @@ package ns_audinterface{
   }
 
   sub generateBase{
-    my ($this, $s) = @_;
+    my ($this, $s, $v) = @_;
     print "generating base from: $s\n";
     my $substr = substr $s, 0, 31;
     my @char = split //, $s;
@@ -184,9 +186,10 @@ package ns_audinterface{
       push @prebaserhythm, $cn;
     }
     my @percentile = sort {$a <=> $b} @prebaserhythm;
-    my $small = $percentile[8];
-    my $medium = $percentile[11];
-    my $large = $percentile[14];
+    my $pp = $this->makePercentileThres($v);
+    my $small = $percentile[$pp->[0]];
+    my $medium = $percentile[$pp->[1]];
+    my $large = $percentile[$pp->[2]];
     foreach my $n (@prebaserhythm){
       if ($n <= $small)    { push @baserhythm,0}
       elsif ($n <= $medium){ push @baserhythm,1}
@@ -196,6 +199,17 @@ package ns_audinterface{
     return \@baserhythm;
   }
 
+  sub makePercentileThres{
+      my ($this, $v) = @_;
+      my @thres = ([9,12,15],
+                   [8,11,14],
+                   [7,10,13],
+                   [6,9,12],
+                   [4,8,11]);
+      return $thres[$v];
+  }
+
+
   sub processBaseIntoRhythm{
       my ($this, $ra, $v) = @_;
       print "processing base into rhythm\n";
@@ -203,7 +217,8 @@ package ns_audinterface{
       my $lastval = 0;
       my $size = @{$ra};
       my @rhythm = ();
-      my $st = $this->makeStrengthValues($v); #v must be between 0 and 4
+      #my $st = $this->makeStrengthValues($v); #v must be between 0 and 4
+      my $st = {strongcrit=> 3, strongthres => 2, restcrit =>0};
       my $p = -1;
       for (my $i=0; $i<$size; $i++){
         if ($lastval == $st->{strongcrit} && $ra->[$i] >= $st->{strongthres} && $laststate eq "littlebeat"){
