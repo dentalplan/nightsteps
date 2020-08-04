@@ -23,6 +23,7 @@ package ns_logger{
         open LOG, ">>$this->{_logfile}" or die $!;
 #        print LOG "logic: $this->{_loop}->{_logic}\n";
         my $headings = '"time","gpstime","lat","lon","compass","daterange_state","daterange_upper","daterange_lower","logicsound","sniffversion","sniffvalue","viewcount","datacount","gpio-a-all.py","compass.py","sig.py","dig.py"';
+        print "dsig logging is $this->{_dsigLogging};
         if ($this->{_dsigLogging}){
             my $ra_dsig = $this->{_loop}->{_lastdataset}->{dsig};
             foreach my $out(@{$ra_dsig}){
@@ -69,7 +70,7 @@ package ns_logger{
           print LOG '"n/a","n/a"';
         }
         print LOG "$daemon{'gpio-a-all.py'},$daemon{'compass.py'},$daemon{'sig.py'},$daemon{'dig.py'}";
-        if ($this->{_dsigLogger}){
+        if ($this->{_dsigLogging}){
           my $dsigFiles = $this->dsigLogging();
           print LOG $dsigFiles;
         }
