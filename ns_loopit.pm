@@ -38,7 +38,7 @@ package ns_loopit{
             _query => $rh->{query},
             _statuslightfile => '/home/pi/nsdata/gpio/dig1.o',
             _datalightfile => '/home/pi/nsdata/gpio/dig2.o',
-            _lastdataset => {viewcount=>0, viewIDs=>{}, detectcount=>0, detectcount_l=>0, detectcount_r=>0, detectIDs_l=>{}, detectcount_r=>{}},
+            _lastdataset => {viewcount=>0, viewIDs=>{}, detectcount=>0, detectcount_l=>0, detectcount_r=>0, dsig=>[]},
             _testtools => ns_testtools->new,
             _telem => ns_telemetry->new,
             _db => ns_dbinterface->new,
@@ -52,7 +52,7 @@ package ns_loopit{
         print "present year is $year";
         $this->{_maxyear} = $year;
         bless $this, $class;
-        $this->{_logger} = ns_logger->new($this, \@time);
+        $this->{_logger} = ns_logger->new($this, 1, \@time);
         $this->loopitSetup;
         return $this;
     }
@@ -131,7 +131,7 @@ package ns_loopit{
                 $this->pipSigSound($rah_places);
                 $this->{_aud}->physSendInstructions($this->{_datalightfile}, \@datalight);
             }else{
-                $this->{_aud}->createEmptyScore; 
+                $this->{_lastdataset}->{dsig} = $this->{_aud}->createEmptyScore; 
                 #$this->{_aud}->resetSonicSig; 
                 print "sending data light signal\n";
                 my @datalight = ("q", "h25","l25","h25", "l100");
@@ -141,7 +141,7 @@ package ns_loopit{
             $this->{_aud}->physSendInstructions($this->{_statuslightfile}, \@statuslight);
 #        }elsif ($this->{_soundmode} == 2){
         }else{
-            $this->{_aud}->createEmptyScore; 
+            $this->{_lastdataset}->{dsig} = $this->{_aud}->createEmptyScore; 
             my @statuslight = ("t", "h150", "l100", "h50", "l100");
             print "sending status light signal\n";
             $this->{_aud}->physSendInstructions($this->{_statuslightfile}, \@statuslight);
@@ -167,9 +167,9 @@ package ns_loopit{
         }
         $this->{_lastdataset}->{datacount} = @do;
         if (@do){
-            $this->{_aud}->createScore(\@do);
+            $this->{_lastdataset}->{dsig} = $this->{_aud}->createScore(\@do);
         }else{
-            $this->{_aud}->createEmptyScore;
+            $this->{_lastdataset}->{dsig} = $this->{_aud}->createEmptyScore;
         }
     }
 

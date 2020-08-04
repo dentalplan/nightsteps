@@ -1,12 +1,14 @@
 package ns_logger{
     use strict;
     use warnings;
+    use File::Copy;
 #    use Time::Piece qw(datetime);    
 
     sub new{
         my $class = shift;
         my $this = {
             _loop => shift,
+            _dsigLogging => shift
         };
         my $rh_time = shift;
         my $i = 0;
@@ -16,10 +18,18 @@ package ns_logger{
         while (-f $fname) {
             $fname = "/home/pi/nsdata/log/log$ts-" . (sprintf("%03d",++$i)) . ".txt";
         }
+        $this->{_ts} = $ts;
         $this->{_logfile} = $fname;
         open LOG, ">>$this->{_logfile}" or die $!;
 #        print LOG "logic: $this->{_loop}->{_logic}\n";
-        print LOG '"time","gpstime","lat","lon","compass","daterange_state","daterange_upper","daterange_lower","logicsound","sniffversion","sniffvalue","viewcount","datacount","gpio-a-all.py","compass.py","sig.py","dig.py"' . "\n";
+        my $headings = '"time","gpstime","lat","lon","compass","daterange_state","daterange_upper","daterange_lower","logicsound","sniffversion","sniffvalue","viewcount","datacount","gpio-a-all.py","compass.py","sig.py","dig.py"';
+        if ($this->{_dsigLogging}){
+            my $ra_dsig = $this->{_loop}->{_lastdataset}->{dsig};
+            foreach my $out(@{$ra_dsig}){
+              $headings .= ',"' + $out->{field} + '_file"';
+            }
+        }
+        print LOG "$headings\n"; 
         close LOG;
         bless $this, $class;
         return $this; 
@@ -39,12 +49,13 @@ package ns_logger{
         my @keys = keys %daemon;
         foreach my $l (@nsrun){
             foreach my $k(@keys){
-           # print $l;
+           #l print $l;
                 if ($l =~ m/$k/){
                     $daemon{$k} = 1;
                 }
             }
         }
+
         my $time = localtime;
         open (LOG, ">>$this->{_logfile}") or die $!;
         print LOG "$time,";
@@ -58,8 +69,33 @@ package ns_logger{
           print LOG '"n/a","n/a"';
         }
         print LOG "$daemon{'gpio-a-all.py'},$daemon{'compass.py'},$daemon{'sig.py'},$daemon{'dig.py'}";
+        if ($this->{_dsigLogger}){
+          my $dsigFiles = $this->dsigLogging();
+          print LOG $dsigFiles;
+        }
         print LOG "\n";
         close (LOG) or die "Couldn't close file";
+    }
+
+    sub dsigLogging{
+        my $this = shift;
+        my @dsigLogFile;
+        my $i = 0;
+        $dsigLogFile[0] = "/home/pi/nsdata/log/dsig/$this->{_ts}-0-" . (sprintf("%07d",$i)) . ".o";
+        while (-f $dsigLogFile[0]) {
+            $dsigLogFile[0] = "/home/pi/nsdata/log/dsig/$this->{_ts}-0-" . (sprintf("%07d",++$i)) . ".o";
+        }
+        my $rtn = $dsigLogFile[0];
+        my $ra_dsig = $this->{_loop}->{_lastdataset}->{dsig};
+        my $size = @{$ra_dsig};
+        for (my $k=1; $k<$size; $k++){
+          $dsigLogFile[$k] = "/home/pi/nsdata/log/dsig/$this->{_ts}-$k-" . (sprintf("%07d",$i)) . ".o";
+          $rtn .= ",$dsigLogFile[$k]"
+        }
+        for (my $l=0; $l<$size; $l++){
+          copy($ra_dsig->[$l]->{path}, $dsigLogFile[$l]);
+        }
+        return $rtn  
     }
 
 }1;
