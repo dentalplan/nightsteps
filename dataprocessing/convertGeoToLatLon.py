@@ -5,9 +5,15 @@ import psycopg2
 import psycopg2.extras
 import string
 import re
+import json
 
 #Connect to the database and make the cursor
-dbConnect = psycopg2.connect("dbname='ldd' user='pi' host='localhost' password='3Oki24tpoppyli6'")
+settingsFile = '/home/pi/nsdata/querydefs/ldd1.json'
+with open(settingsFile) as scr:
+  settings = json.loads(scr.read())
+n = settings['databaseName']
+pw = settings['databasePw']
+dbConnect = psycopg2.connect("dbname='" + n + "' user='pi' host='localhost' password='" + pw + "'")
 #dbConnect = psycopg2.connect("dbname='ldd' user='ldd' host='localhost' password=''")
 cursor = dbConnect.cursor(cursor_factory=psycopg2.extras.DictCursor)
 scope = sys.argv[1]
@@ -138,7 +144,10 @@ if (scope == "points") or (scope == "all"):
   permENsql = "SELECT p.permission_id, p.easting, p.northing FROM app_ldd.ld_permissions AS p WHERE p.easting IS NOT NULL AND p.northing IS NOT NULL;"
   cursor.execute(permENsql)
   permEN = cursor.fetchall()
+  ttlForPoints = len(permEN)
+  c = 0
   for en in permEN:
+    print "processing " + str(c) + " of " + str(ttlForPoints) + " basic points"
     perm_id = str(en[0])
     easting = str(en[1])
     northing = str(en[2])
@@ -158,6 +167,9 @@ if (scope == "points") or (scope == "all"):
       updSql = "UPDATE app_ldd.ns_permlatlon SET lat = " + slat + ", lon = " + slon + " WHERE permission_id = " + perm_id + ";"
       print "updating..."
       cursor.execute(updSql)
+    c += 1
+    if c % 500 == 0:
+      dbConnect.commit()
   dbConnect.commit()
 
 #set up polys
@@ -166,7 +178,9 @@ if (scope == "geopolys") or (scope == "all") or (scope == "geo"):
   sql = "SELECT mi_prinx, ST_AsText(the_geom) AS poly FROM app_ldd.mi_ld_permissions_polygons WHERE the_geom Is Not Null;"
   polys = sendSQLgetDict(sql, cursor)
   c = 0
+  ttlForPolys = len(polys)
   for g in polys:
+    print "processing " + str(c) + " of " + str(ttlForPolys) + " polys"
     c += 1
     if c%25 == 0:
       with open("log_geopoly.txt","w") as f: 
@@ -181,16 +195,17 @@ if (scope == "geopolys") or (scope == "all") or (scope == "geo"):
     else:
       sqladd = "INSERT INTO app_ldd.nsll_ld_permissions_geo (objectid, the_geom) VALUES (" + str(g['mi_prinx']) + ", ST_GeomFromText('" + newPoly + "', 4326));"
     cursor.execute(sqladd)
-    if c%1000 == 0:
+    if c%500 == 0:
       dbConnect.commit()
-  logfilepoly.close()
   dbConnect.commit()
 
 if (scope == "geopoints") or (scope == "all") or (scope == "geo"):
   sql = "SELECT pt.mi_prinx, ST_AsText(pt.the_geom) AS point FROM app_ldd.mi_ld_permissions_points AS pt WHERE pt.the_geom Is Not Null ORDER BY pt.mi_prinx ASC;"
   points = sendSQLgetDict(sql, cursor)
   c = 0
+  ttlForGeopoints = len(points)
   for p in points:
+    print "processing " + str(c) + " of " + str(ttlForGeopoints) + " geopointss"
     c += 1
     if c%25 == 0:
       with open("log_geopoint.txt","w") as f: 
@@ -205,9 +220,8 @@ if (scope == "geopoints") or (scope == "all") or (scope == "geo"):
     else:
       sqladd = "INSERT INTO app_ldd.nsll_ld_permissions_geo (objectid, the_geom_pt) VALUES (" + str(p['mi_prinx']) + ", ST_GeomFromText('" + newPoint + "', 4326));"
     cursor.execute(sqladd)
-    if c%1000 == 0:
+    if c%500 == 0:
       dbConnect.commit()
-  logfilept.close()
   dbConnect.commit()
 
 dbConnect.close()
