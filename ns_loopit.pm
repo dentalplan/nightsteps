@@ -279,33 +279,45 @@ package ns_loopit{
         my $rh = $this->{_daterange}->readDateRange;
         my $cond;
         switch ($rh->{state}){
-            case (0){  # $cond = " AND (status_rc = 'SUBMITTED' or status_rc = 'STARTED') "; 
+            case (0){  # StillToCome status 
+                        $cond = " AND " . $dateset->{undecidedStatusCheck};}
+            case (3){
+                        $cond = " AND ( $dateset->{undecidedStatusCheck}  OR $dateset->{stillToComeStatusCheck})";}
+            case (4){
                         $cond = " AND " . $dateset->{stillToComeStatusCheck};}
-            case (3){   
+
+            case (6){  # StillToCome <--> Lower Date Range
                         my $btmyear = $rh->{btm}->strftime('%Y-%m-%d');
-                        #$cond = " AND (status_rc = 'SUBMITTED' OR status_rc = 'STARTED' OR (status_rc = 'COMPLETED' AND p.completed_date >= '$btmyear')) ";
+                        $cond = " AND ($dateset->{stillToComeStatusCheck} OR $dateset->{undecidedStatusCheck} OR ($dateset->{dateRangeStatusCheck} AND $dateset->{dateField} >= '$btmyear'))";
+                    }
+            case (7){  # StillToCome <--> Lower Date Range
+                        my $btmyear = $rh->{btm}->strftime('%Y-%m-%d');
                         $cond = " AND ($dateset->{stillToComeStatusCheck} OR ($dateset->{dateRangeStatusCheck} AND $dateset->{dateField} >= '$btmyear'))";
                     }
-            case (4){
+            case (8){  # Upper Date Range <--> Lower Date Range
                         my $topyear = $rh->{top}->strftime('%Y-%m-%d');
                         my $btmyear = $rh->{btm}->strftime('%Y-%m-%d');
-                        #$cond = " AND (status_rc = 'COMPLETED' AND p.completed_date <= '$topyear' AND p.completed_date >= '$btmyear') ";
                         $cond = " AND ($dateset->{dateRangeStatusCheck} AND $dateset->{dateField} <= '$topyear' AND $dateset->{dateField} >= '$btmyear') ";
                     }
-            case (6){
+            case (9){ # All conditions
                         my $topyear = $this->{_daterange}->{_drp}->{highDate};
                         my $btmyear = $this->{_daterange}->{_drp}->{lowDate};
-                        #$cond = " AND (status_rc = 'DELETED' OR status_rc = 'LAPSED' OR status_rc = 'STARTED' OR status_rc = 'SUBMITTED' OR " . 
-                        #        " (status_rc = 'COMPLETED' AND p.completed_date <= '$topyear' AND p.completed_date >= '$btmyear')) ";
+                        $cond = " AND ($dateset->{undecidedStatusCheck} OR $dateset->{mightHaveBeenStatusCheck} OR $dateset->{stillToComeStatusCheck} OR " .
+                                " ($dateset->{dateRangeStatusCheck} AND $dateset->{dateField} <= '$topyear' AND $dateset->{dateField} >= '$btmyear')) ";
+                    }
+            case (10){ # All conditions bar undecided
+                        my $topyear = $this->{_daterange}->{_drp}->{highDate};
+                        my $btmyear = $this->{_daterange}->{_drp}->{lowDate};
                         $cond = " AND ($dateset->{mightHaveBeenStatusCheck} OR $dateset->{stillToComeStatusCheck} OR " .
                                 " ($dateset->{dateRangeStatusCheck} AND $dateset->{dateField} <= '$topyear' AND $dateset->{dateField} >= '$btmyear')) ";
                     }
-            case (7){
+            case (11){ # Upper Data Range <--> mightHaveBeen
                         my $topyear = $rh->{top}->strftime('%Y-%m-%d');
+                        my $btmyear = $this->{_daterange}->{_drp}->{lowDate};
                         #$cond = " AND (status_rc = 'DELETED' OR status_rc = 'LAPSED' OR (status_rc = 'COMPLETED' AND p.completed_date <= '$topyear')) ";
-                        $cond = " AND ($dateset->{mightHaveBeenStatusCheck} OR ($dateset->{dateRangeStatusCheck} AND $dateset->{dateField} <= '$topyear'))";
+                        $cond = " AND ($dateset->{mightHaveBeenStatusCheck} OR ($dateset->{dateRangeStatusCheck} AND $dateset->{dateField} <= '$topyear'  AND $dateset->{dateField} >= '$btmyear'))";
                     }
-            case (8){   #$cond = " AND (status_rc = 'DELETED' OR status_rc = 'LAPSED') "; 
+            case (12){  # mighthaveBeen; 
                         $cond = " AND $dateset->{mightHaveBeenStatusCheck}";}
         }
         return $cond;

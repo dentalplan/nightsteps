@@ -16,7 +16,8 @@ package ns_config{
 
   sub defineControlParameters{
     my $this = shift;
-    my $qs = $this->buildQuerySetup("/home/pi/nsdata/querydefs/ldd1.json");
+#    my $qs = $this->buildQuerySetup("/home/pi/nsdata/querydefs/ldd1.json");
+    my $qs = $this->buildQuerySetup("/home/pi/nsdata/querydefs/ns1.json");
     my @switchbands = (
         {low=>35, high=>110, logic=>'percussDemo'},
         {low=>135, high=>200, logic=>'percussIt', query=>$qs, option=>"textsearch-changeofuse"},
@@ -26,8 +27,9 @@ package ns_config{
         {low=>930, high=>1024, logic=>'percussIt', query=>$qs, option=>"everything"}
         );
     my @dateScale = (
-        {low=>0, high=>178, range=>'stillToCome'},
-        {low=>179, high=>890, range=>'dateRange'},
+        {low=>0, high=>175, range=>'undecided'},
+        {low=>176, high=>353, range=>'stillToCome'},
+        {low=>354, high=>890, range=>'dateRange'},
         {low=>891, high=>1023, range=>'mightHaveBeen'},
     );
     my %dateRangeProperties = (
