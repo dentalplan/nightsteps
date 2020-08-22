@@ -197,7 +197,7 @@ package ns_dbinterface{
               $groupby . 
               $r_barrel->{having} . 
 			  $r_barrel->{orderby} . ";";
-    print "$sql\n";
+    #print "$sql\n";
 		my $query = $this->{dbh}->prepare($sql);
     $query->execute;		
 		my $num_fields = @{$r_barrel->{fields}};
@@ -228,7 +228,7 @@ package ns_dbinterface{
 			" SET " . $r_barrel->{field} . 
 			"=" . $value .
 			$r_barrel->{where};
-		print "$sql\n";
+		#print "$sql\n";
                 my $query = $this->{dbh}->prepare($sql);
                 $query->execute or die $DBI::errstr;
 		$query->finish;

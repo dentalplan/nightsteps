@@ -39,7 +39,7 @@ package ns_loopit{
             _statuslightfile => '/home/pi/nsdata/gpio/dig1.o',
             _datalightfile => '/home/pi/nsdata/gpio/dig2.o',
             _lastdataset => {viewcount=>0, viewIDs=>{}, detectcount=>0, detectcount_l=>0, detectcount_r=>0, dsig=>[]},
-            _testtools => ns_testtools->new,
+            _testtools => ns_testtools->new($rh->{printmsg}),
             _telem => ns_telemetry->new,
             _db => ns_dbinterface->new,
             _dbfilepath => '/home/pi/nsdata/',
@@ -49,7 +49,7 @@ package ns_loopit{
         $this->{_listenshapeLeft} = $rh->{listenshapeLeft};
         $this->{_listenshapeRight} = $rh->{listenshapeRight};
         my $year = $time[5] + 1900;
-        print "present year is $year";
+        if ($this->{_printmsg}) { print "present year is $year";}
         $this->{_maxyear} = $year;
         bless $this, $class;
         $this->{_logger} = ns_logger->new($this, 1, \@time);
@@ -89,7 +89,7 @@ package ns_loopit{
                           {src=>"/home/pi/nsdata/gpio/dig1_demo.o", dst=>$this->{_statuslightfile}} );
         my $size = @demotrack;
         for(my $i=0; $i<$size; $i++){
-            print "cp $demotrack[$i]->{src} $demotrack[$i]->{dst}";
+            $this->{_testtools}->outputText("cp $demotrack[$i]->{src} $demotrack[$i]->{dst}");
             system "cp $demotrack[$i]->{src} $demotrack[$i]->{dst}";
         }
         $this->{_lastdataset}->{datacount} = "demo";
@@ -99,7 +99,7 @@ package ns_loopit{
 
     sub percussSetup{
         my $this = shift;
-        print "$this->{_query}->{databaseName}, $this->{_query}->{databaseType})\n";
+        $this->{_testtools}->outputText("$this->{_query}->{databaseName}, $this->{_query}->{databaseType})\n");
         $this->{_db}->connectDB($this->{_query}->{databaseName}, $this->{_query}->{databaseType}, $this->{_query}->{databasePw});
         $this->{_pcField} = $this->{_query}->{viewQuery}->{options}->{$this->{_option}}->{percentileFieldAndQuery};
         my $pc = $this->{_query}->{percentileQuery}->{$this->{_pcField}};
@@ -112,7 +112,7 @@ package ns_loopit{
         for (my $i=0; $i<$size; $i++){
           $this->{_thres}->{_pcBands}->[$i+1]->{minval} = $ra->[$i]; #the PC band is at $i+1 because the lowest band has a max val i.e zero! 
         }
-        print "setting up aud\n";
+        $this->{_testtools}->outputText("setting up aud\n");
         $this->{_aud} = ns_audinterface->new($this->{_query}->{_sonification}, $this->{_thres}, $this->{_option});
         $this->{_aud}->{_minyear} = $this->{_query}->{minDate}->{year};
         $this->{_aud}->{_maxyear} = $this->{_query}->{maxDate}->{year};
@@ -122,19 +122,19 @@ package ns_loopit{
         my $this = shift;
         my $rh_loc = $this->{_telem}->readGPS;
         if ($rh_loc->{success} == 1){
-            print "GPS success!\n";
+            $this->{_testtools}->outputText("GPS success!\n");
             my $rah_places = $this->prepPolygonPlaces($rh_loc);
             $this->pipSortDataset($rah_places);
             if ($rah_places){
-                print "sending data light signal\n";
-                my @datalight = ("q", "h100", "l100");
+                $this->{_testtools}->outputText("sending data light signal\n");
+                my @datalight = ("q", "h50", "l50");
                 $this->pipSigSound($rah_places);
                 $this->{_aud}->physSendInstructions($this->{_datalightfile}, \@datalight);
             }else{
                 $this->{_lastdataset}->{dsig} = $this->{_aud}->createEmptyScore; 
                 #$this->{_aud}->resetSonicSig; 
-                print "sending data light signal\n";
-                my @datalight = ("q", "h25","l25","h25", "l100");
+                $this->{_testtools}->outputText("sending data light signal\n");
+                my @datalight = ("q", "h10","l25","h10", "l50");
                 $this->{_aud}->physSendInstructions($this->{_datalightfile}, \@datalight);
             }
             my @statuslight = ("t", "h1500", "l1");
@@ -143,7 +143,7 @@ package ns_loopit{
         }else{
             $this->{_lastdataset}->{dsig} = $this->{_aud}->createEmptyScore; 
             my @statuslight = ("t", "h150", "l100", "h50", "l100");
-            print "sending status light signal\n";
+            $this->{_testtools}->outputText("sending status light signal\n");
             $this->{_aud}->physSendInstructions($this->{_statuslightfile}, \@statuslight);
         }
     }
@@ -161,7 +161,7 @@ package ns_loopit{
         my @do;
         foreach my $rh_pl (@{$rah_places}){
             if ($rh_pl->{detected_left} || $rh_pl->{detected_right}){
-                print "$rh_pl->{permission_id} detected! Left $rh_pl->{detected_left}. Right $rh_pl->{detected_right}. Distance is $rh_pl->{distance}\n\n";
+                $this->{_testtools}->outputText("$rh_pl->{permission_id} detected! Left $rh_pl->{detected_left}. Right $rh_pl->{detected_right}. Distance is $rh_pl->{distance}\n\n");
                 push @do, $rh_pl;
             }
         }
@@ -175,7 +175,6 @@ package ns_loopit{
 
     sub prepPolygonPlaces{
         my ($this, $rh_loc) = @_;
-        #print "$sql\n";
         my $viewFormed = $this->createNearbyView($rh_loc);
         my $rah = [];
         if ($viewFormed) {
@@ -184,7 +183,7 @@ package ns_loopit{
           my $option = $this->{_option};
           my $sql = "SELECT COUNT($rh_view->{keyField}->{name}) FROM $rh_view->{viewName}";
           $this->{_lastdataset}->{viewcount} = $this->{_db}->runsql_rtnScalar($sql);
-          print "$this->{_lastdataset}->{viewcount} in view \n"; 
+          $this->{_testtools}->outputText("$this->{_lastdataset}->{viewcount} in view \n"); 
           my $ra_geofield = $this->setupPlaceGeoFields($rh_loc);
           # Now we go on to the polygon calcs
           my @fields = ();
@@ -199,19 +198,16 @@ package ns_loopit{
   #                    groupbys=>\(),
                       having=>"",
                       orderby=>"");
-          #print "running final query...\n";
           $rah = $this->{_db}->runSqlHash_rtnAoHRef(\%sqlhash, 1);
-          #$this->{_testtools}->printRefArrayOfHashes($rah);
         }else{
-          print "View formation failed\n";
+          $this->{_testtools}->outputText("View formation failed\n");
         }
-        #print "done\n";
         return $rah;
     }
 
     sub createNearbyView{
         my ($this, $rh_loc) = @_;
-        print "creating view sub started\n";
+        $this->{_testtools}->outputText("creating view sub started\n");
         my $DLen = $this->{_telem}->getDegreeToMetre($rh_loc);
         my $scoopDist = 600; # this is how far away the points are the sniffer can check. For very large sites, this may cause problems.
         my $dateCondition = $this->createDateCondition;
@@ -222,8 +218,6 @@ package ns_loopit{
         #Get the dimensions of the query box we are looking in/
         my %lon = (min=>$rh_loc->{lon} - $distlon, max=>$rh_loc->{lon} +$distlon) ;
         my %lat = (min=>$rh_loc->{lat} - $distlat, max=>$rh_loc->{lat} +$distlat) ;
-#        my @groupby = ("lon", "lat", "p.completed_date", "p.permission_id");
-  
         my $rh_view = $this->{_query}->{viewQuery};
         #first we have to do a view that limits what we are looking at, so we don't have to do complicated polygon calcs on the whole DB!
         my $groupby = $rh_view->{otherGroupbyFields} . ", $rh_view->{latField}, $rh_view->{lonField}, $rh_view->{keyField}->{table}\.$rh_view->{keyField}->{name}";
@@ -237,15 +231,15 @@ package ns_loopit{
                      "($rh_view->{latField} BETWEEN $lat{min} AND $lat{max}) " . 
                       $dateCondition . $rh_sc->{where};
         my $having = $rh_view->{having} . $rh_sc->{having} ;
-        print "dropping existing view...\n";
+        $this->{_testtools}->outputText("dropping existing view...\n");
         my $sv = $this->{_db}->runsql_rtnSuccessOnly("DROP VIEW IF EXISTS $rh_view->{viewName};");
-        print "creating view...\n";
+        $this->{_testtools}->outputText("creating view...\n");
         my $sql = "CREATE VIEW $rh_view->{viewName} AS SELECT $field FROM $from $where GROUP BY $groupby $having;";
-        print $sql;
+        $this->{_testtools}->outputText($sql);
         my $sq = $this->{_db}->runsql_rtnSuccessOnly($sql);
         return $sq;
     }
-  
+ 
     sub setupPlaceGeoFields{
         my ($this, $rh_loc) = @_;
         my @geofield;
@@ -273,7 +267,7 @@ package ns_loopit{
  
     sub createDateCondition{
         my $this = shift;
-        print "creating date condition\n";
+        $this->{_testtools}->outputText("creating date condition\n");
         my $dateset = $this->{_query}->{viewQuery}->{dateFields};
         my $statusfield = $dateset->{stausField};
         my $rh = $this->{_daterange}->readDateRange;

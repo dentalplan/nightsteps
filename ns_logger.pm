@@ -25,12 +25,7 @@ package ns_logger{
         my $headings = '"time","gpstime","lat","lon","compass","daterange_state","daterange_upper","daterange_lower","logicsound","sniffversion","sniffvalue","viewcount","datacount","gpio-a-all.py","compass.py","sig.py","dig.py"';
         print "dsig logging is $this->{_dsigLogging}\n";
         if ($this->{_dsigLogging}){
-            print "adding headers\n";
-            my $ra_dsig = $this->{_loop}->{_lastdataset}->{dsig};
-            foreach my $out(@{$ra_dsig}){
-              print "adding heading\n";
-              $headings .= ',"' + $out->{field} + '_file"';
-            }
+            $headings .= ',"dsig_l_file","dsig_r_file"';
         }
         print LOG "$headings\n"; 
         close LOG;

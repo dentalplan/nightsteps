@@ -24,7 +24,7 @@
             "dateRangeStatuses": [
                 "COMPLETED"
             ], 
-            "stillToComeStatusCheck": "(p.status_rc = 'SUBMITTED' OR p.status_rc = 'STARTED')", 
+            "stillToComeStatusCheck": "(p.status_rc = 'SUBMITTED' OR p.status_rc = 'STARTED' OR p.status_rc = 'GRANTED')", 
             "mightHaveBeenStatuses": [
                 "DELETED", 
                 "LAPSED", 
@@ -34,6 +34,20 @@
         "selectOnlyFields": "date_part('year', p.permission_date) AS permissionyear, date_part('year', p.completed_date) AS completedyear ", 
         "having": "", 
         "options": {
+            "comments-objects": {
+                "fields": "", 
+                "from": "", 
+                "where": " AND comments_objecting  > 1 ", 
+                "percentileFieldAndQuery": "comments_objecting", 
+                "having": ""
+            }, 
+            "socialhousing-proposed": {
+                "fields": "", 
+                "from": "", 
+                "where": " AND proposed_socialhousing > 1 ", 
+                "percentileFieldAndQuery": "proposed_socialhousing", 
+                "having": ""
+            }, 
             "textsearch-demolition": {
                 "fields": "", 
                 "from": "", 
@@ -48,11 +62,18 @@
                 "percentileFieldAndQuery": "sitearea_total", 
                 "having": ""
             }, 
+            "comments-supports": {
+                "fields": "", 
+                "from": "", 
+                "where": " AND comments_supporting  > 1 ", 
+                "percentileFieldAndQuery": "comments_supporting", 
+                "having": ""
+            }, 
             "socialhousing-exists": {
                 "fields": "", 
                 "from": "", 
                 "where": " AND existing_socialhousing > 1 ", 
-                "percentileFieldAndQuery": "totalarea", 
+                "percentileFieldAndQuery": "existing_socialhousing", 
                 "having": ""
             }, 
             "textsearch-changeofuse": {
@@ -77,7 +98,7 @@
                 "having": ""
             }
         }, 
-        "otherGroupbyFields": "p.the_geom_poly, p.the_geom_pt, p.permission_date, p.completed_date, p.status_rc, p.descr, sitearea_total", 
+        "otherGroupbyFields": "p.the_geom_poly, p.the_geom_pt, p.permission_date, p.completed_date, p.status_rc, p.descr, existing_socialhousing, proposed_socialhousing, sitearea_total, comments_total, comments_objecting, comments_supporting", 
         "lonField": "lon"
     }, 
     "sonification": {
@@ -135,6 +156,150 @@
     }, 
     "databasePw": "", 
     "percentileQuery": {
+        "comments_supporting": {
+            "query": " select  percentile_disc(0.1) within group (order by comments_total) AS ten_pc,  percentile_disc(0.3) within group (order by comments_total) AS thirty_pc,  percentile_disc(0.5) within group (order by comments_total) AS fifty_pc,  percentile_disc(0.7) within group (order by comments_total) AS seventy_pc,  percentile_disc(0.9) within group (order by comments_total) AS ninety_pc FROM app_ldd.ns_base;", 
+            "bands": [
+                {
+                    "solstr": 0, 
+                    "rhythmstr": 0, 
+                    "percentileName": "zero_pc", 
+                    "minval": 0.0
+                }, 
+                {
+                    "solstr": 2, 
+                    "rhythmstr": 0, 
+                    "percentileName": "ten_pc"
+                }, 
+                {
+                    "solstr": 6, 
+                    "rhythmstr": 1, 
+                    "percentileName": "thirty_pc"
+                }, 
+                {
+                    "solstr": 10, 
+                    "rhythmstr": 2, 
+                    "percentileName": "fifty_pc"
+                }, 
+                {
+                    "solstr": 14, 
+                    "rhythmstr": 3, 
+                    "percentileName": "seventy_pc"
+                }, 
+                {
+                    "solstr": 20, 
+                    "rhythmstr": 4, 
+                    "percentileName": "ninety_pc"
+                }
+            ]
+        }, 
+        "existing_socialhousing": {
+            "query": " select  percentile_disc(0.1) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS ten_pc,  percentile_disc(0.3) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS thirty_pc,  percentile_disc(0.5) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS fifty_pc,  percentile_disc(0.7) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS seventy_pc,  percentile_disc(0.9) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS ninety_pc FROM app_ldd.ns_base;", 
+            "bands": [
+                {
+                    "solstr": 0, 
+                    "rhythmstr": 0, 
+                    "percentileName": "zero_pc", 
+                    "minval": 0.0
+                }, 
+                {
+                    "solstr": 2, 
+                    "rhythmstr": 0, 
+                    "percentileName": "ten_pc"
+                }, 
+                {
+                    "solstr": 6, 
+                    "rhythmstr": 1, 
+                    "percentileName": "thirty_pc"
+                }, 
+                {
+                    "solstr": 10, 
+                    "rhythmstr": 2, 
+                    "percentileName": "fifty_pc"
+                }, 
+                {
+                    "solstr": 14, 
+                    "rhythmstr": 3, 
+                    "percentileName": "seventy_pc"
+                }, 
+                {
+                    "solstr": 20, 
+                    "rhythmstr": 4, 
+                    "percentileName": "ninety_pc"
+                }
+            ]
+        }, 
+        "proposed_socialhousing": {
+            "query": " select  percentile_disc(0.1) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS ten_pc,  percentile_disc(0.3) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS thirty_pc,  percentile_disc(0.5) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS fifty_pc,  percentile_disc(0.7) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS seventy_pc,  percentile_disc(0.9) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS ninety_pc FROM app_ldd.ns_base;", 
+            "bands": [
+                {
+                    "solstr": 0, 
+                    "rhythmstr": 0, 
+                    "percentileName": "zero_pc", 
+                    "minval": 0.0
+                }, 
+                {
+                    "solstr": 2, 
+                    "rhythmstr": 0, 
+                    "percentileName": "ten_pc"
+                }, 
+                {
+                    "solstr": 6, 
+                    "rhythmstr": 1, 
+                    "percentileName": "thirty_pc"
+                }, 
+                {
+                    "solstr": 10, 
+                    "rhythmstr": 2, 
+                    "percentileName": "fifty_pc"
+                }, 
+                {
+                    "solstr": 14, 
+                    "rhythmstr": 3, 
+                    "percentileName": "seventy_pc"
+                }, 
+                {
+                    "solstr": 20, 
+                    "rhythmstr": 4, 
+                    "percentileName": "ninety_pc"
+                }
+            ]
+        }, 
+        "comments_objecting": {
+            "query": " select  percentile_disc(0.1) within group (order by comments_total) AS ten_pc,  percentile_disc(0.3) within group (order by comments_total) AS thirty_pc,  percentile_disc(0.5) within group (order by comments_total) AS fifty_pc,  percentile_disc(0.7) within group (order by comments_total) AS seventy_pc,  percentile_disc(0.9) within group (order by comments_total) AS ninety_pc FROM app_ldd.ns_base;", 
+            "bands": [
+                {
+                    "solstr": 0, 
+                    "rhythmstr": 0, 
+                    "percentileName": "zero_pc", 
+                    "minval": 0.0
+                }, 
+                {
+                    "solstr": 2, 
+                    "rhythmstr": 0, 
+                    "percentileName": "ten_pc"
+                }, 
+                {
+                    "solstr": 6, 
+                    "rhythmstr": 1, 
+                    "percentileName": "thirty_pc"
+                }, 
+                {
+                    "solstr": 10, 
+                    "rhythmstr": 2, 
+                    "percentileName": "fifty_pc"
+                }, 
+                {
+                    "solstr": 14, 
+                    "rhythmstr": 3, 
+                    "percentileName": "seventy_pc"
+                }, 
+                {
+                    "solstr": 20, 
+                    "rhythmstr": 4, 
+                    "percentileName": "ninety_pc"
+                }
+            ]
+        }, 
         "sitearea_total": {
             "query": " select  percentile_disc(0.1) within group (order by sitearea_total) AS ten_pc,  percentile_disc(0.3) within group (order by sitearea_total) AS thirty_pc,  percentile_disc(0.5) within group (order by sitearea_total) AS fifty_pc,  percentile_disc(0.7) within group (order by sitearea_total) AS seventy_pc,  percentile_disc(0.9) within group (order by sitearea_total) AS ninety_pc FROM app_ldd.ns_base;", 
             "bands": [
@@ -186,13 +351,7 @@
         ], 
         "polygonField": "the_geom_poly", 
         "pointField": "the_geom_pt", 
-        "options": {
-            "socialhousing-exists": {
-                "fields": [
-                    "existing_socialhousing"
-                ]
-            }
-        }, 
+        "options": {}, 
         "from": "app_ldd.v_perm_widerarea AS v"
     }, 
     "databaseName": "ldd", 

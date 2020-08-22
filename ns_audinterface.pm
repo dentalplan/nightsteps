@@ -4,7 +4,7 @@ package ns_audinterface{
     use warnings;
     use lib ".";
     use Switch;
-#    use ns_testtools;
+    use ns_testtools;
 #    use ns_audlibrary;
     use Math::Round qw(round);
     use Data::Dumper;
@@ -29,7 +29,7 @@ package ns_audinterface{
             _sonification => $son,
             _rules => $ra_rules,
             _effects=> $rh_effects,
-            _testtools => ns_testtools->new,
+            _testtools => ns_testtools->new(0),
 #            _audlib => ns_audlibrary->new,
             _outputs => [{path=>'/home/pi/nsdata/gpio/dsig_l.o', field=>'detected_left', ra_sig=>[]}, 
                          {path=>'/home/pi/nsdata/gpio/dsig_r.o', field=>'detected_right', ra_sig=>[]}],
@@ -54,7 +54,7 @@ package ns_audinterface{
   sub createScore{
     my ($this, $rah_do) = @_;
     my $number = @{$rah_do};
-    print "creating score from $number records\n";
+    $this->{_testtools}->outputText("creating score from $number records\n");
     foreach my $out (@{$this->{_outputs}}){
       $out->{ra_sig} = [];
     }
@@ -64,7 +64,7 @@ package ns_audinterface{
       foreach my $out (@{$this->{_outputs}}){
         if ($rh_do->{$out->{field}}){
           $o++;
-          print "$out->{field} is true\n";
+          $this->{_testtools}->outputText("$out->{field} is true\n");
         }
       }
       foreach my $out (@{$this->{_outputs}}){
@@ -92,7 +92,7 @@ package ns_audinterface{
 
   sub createEmptyScore{
     my $this = shift;
-    print "creating empty score\n";
+    $this->{_testtools}->outputText("creating empty score\n");
     foreach my $out (@{$this->{_outputs}}){
       $out->{ra_sig} = [];
       my $ra_instr = $this->generateEmptyColumn;
@@ -108,7 +108,7 @@ package ns_audinterface{
     my $ra_instr = [];
     #print Dumper($distthres);
     foreach my $t (@{$distthres}){
-      print "$rh_do->{distance} <> $t->{maxdist}\n";
+      $this->{_testtools}->outputText("$rh_do->{distance} <> $t->{maxdist}\n");
       if ($rh_do->{distance} < $t->{maxdist}){
         $rh_attr->{repeats} = $t->{repeats};
         $rh_attr->{solstr} = $t->{solstr};
@@ -139,7 +139,7 @@ package ns_audinterface{
   sub generateEmptyColumn{
     my $this = shift;
     my @instr = ();
-    print "generating Empty Column\n";
+    $this->{_testtools}->outputText("generating Empty Column\n");
     for(my $i=0; $i<$this->{_scorelines}; $i++){
       my $l = {line=>"d$this->{_linedur}\@f0", hasstrike=>0};
       my $ra_l = $l;
@@ -152,7 +152,7 @@ package ns_audinterface{
     my $this = shift;
     foreach my $out (@{$this->{_outputs}}){
       my @lines = ();
-      print "Outputting to $out->{path}\n";
+      $this->{_testtools}->outputText("Outputting to $out->{path}\n");
       #foreach my $ra (@{$ra_sig}){
       my $ra = $out->{ra_sig};
       my $sizerows = @{$ra->[0]};
@@ -171,7 +171,7 @@ package ns_audinterface{
 
   sub generateBase{
     my ($this, $s, $v) = @_;
-    print "generating base from: $s\n";
+    $this->{_testtools}->outputText("generating base from: $s\n");
     my $substr = substr $s, 0, 31;
     my @char = split //, $s;
     my $size = @char;
@@ -182,7 +182,7 @@ package ns_audinterface{
       if ($i < $size){
        $cn = ord($char[$i]);
       }
-      print "$cn\n";
+      $this->{_testtools}->outputText("$cn\n");
       push @prebaserhythm, $cn;
     }
     my @percentile = sort {$a <=> $b} @prebaserhythm;
@@ -212,7 +212,7 @@ package ns_audinterface{
 
   sub processBaseIntoRhythm{
       my ($this, $ra, $v) = @_;
-      print "processing base into rhythm\n";
+      $this->{_testtools}->outputText("processing base into rhythm\n");
       my $laststate = "";
       my $lastval = 0;
       my $size = @{$ra};
@@ -256,11 +256,11 @@ package ns_audinterface{
   }
 
   sub convertRhythmIntoInstr{
-    print "converting rhythm into instr\n";
     my ($this, $rh, $ra_rhythm) = @_;
+    $this->{_testtools}->outputText("converting rhythm into instr\n");
     my $rhylength = @{$ra_rhythm};
     my $blockdur = $this->{_sonicspace} / ($rh->{elecount} * $rh->{repeats});
-    print "Blockdur is $blockdur\n";
+    $this->{_testtools}->outputText("Blockdur is $blockdur\n");
     my @scorepart = ();
     my $curdur = 0;
     my $linesadded = 0;
@@ -270,7 +270,7 @@ package ns_audinterface{
                     unfinishedLine=>$uf };
     for(my $i=0;$linesadded < $this->{_scorelines}; $i++){
       if ($i == $rhylength){
-        print "resetting\n";
+        $this->{_testtools}->outputText("resetting\n");
         $i=0;
       }
       $rh_attr->{type} = $ra_rhythm->[$i]->{type};

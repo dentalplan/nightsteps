@@ -1,12 +1,22 @@
 package ns_testtools{
     use strict;
     use warnings;
+#    use Data::Dumper;
 # generic test tools for nightsteps modules
     sub new{
         my $class = shift;
-        my $this = {};
+        my $debug = shift;
+        my $this = {_debug=>$debug};
+        print $this->{_debug};
         bless $this, $class;
-        return $class;
+        return $this;
+    }
+
+    sub outputText{
+      my ($this, $text) = @_;
+      if ($this->{_debug} == 1){
+        print $text;
+      }
     }
 
     sub printRefArray{

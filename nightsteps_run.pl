@@ -44,6 +44,7 @@ for (my $i=0;;$i++){
                                       option => $s->{option},
                                       val => $s->{val},
                                       maxdist => $maxdist,
+                                      printmsg => 0
                                     });
             print "switching to $s->{logic}\n";
             $it->loopitSetup;
