@@ -161,7 +161,7 @@ package ns_loopit{
         my @do;
         foreach my $rh_pl (@{$rah_places}){
             if ($rh_pl->{detected_left} || $rh_pl->{detected_right}){
-                $this->{_testtools}->outputText("$rh_pl->{permission_id} detected! Left $rh_pl->{detected_left}. Right $rh_pl->{detected_right}. Distance is $rh_pl->{distance}\n\n");
+                $this->{_testtools}->outputText("$rh_pl->{borough_ref} detected! Left $rh_pl->{detected_left}. Right $rh_pl->{detected_right}. Distance is $rh_pl->{distance}\n\n");
                 push @do, $rh_pl;
             }
         }
