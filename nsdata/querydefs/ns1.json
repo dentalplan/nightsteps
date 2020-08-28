@@ -38,7 +38,7 @@
                 "fields": "", 
                 "from": "", 
                 "where": "  AND (p.ns_type = 'major') AND p.is_in_conservationarea = TRUE ", 
-                "percentileFieldAndQuery": "proposed_socialhousing", 
+                "percentileFieldAndQuery": "sitearea_total", 
                 "having": ""
             }, 
             "socialhousing-proposed": {
@@ -214,7 +214,7 @@
             ]
         }, 
         "existing_socialhousing": {
-            "query": " select  percentile_disc(0.1) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS ten_pc,  percentile_disc(0.3) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS thirty_pc,  percentile_disc(0.5) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS fifty_pc,  percentile_disc(0.7) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS seventy_pc,  percentile_disc(0.9) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS ninety_pc FROM app_ldd.ns_baseWHERE (existing_socialhousing IS NOT NULL OR proposed_socialhousing IS NOT NULL);", 
+            "query": " select  percentile_disc(0.1) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS ten_pc,  percentile_disc(0.3) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS thirty_pc,  percentile_disc(0.5) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS fifty_pc,  percentile_disc(0.7) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS seventy_pc,  percentile_disc(0.9) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS ninety_pc FROM app_ldd.ns_base WHERE (existing_socialhousing IS NOT NULL OR proposed_socialhousing IS NOT NULL);", 
             "bands": [
                 {
                     "solstr": 0, 
@@ -250,7 +250,7 @@
             ]
         }, 
         "proposed_socialhousing": {
-            "query": " select  percentile_disc(0.1) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS ten_pc,  percentile_disc(0.3) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS thirty_pc,  percentile_disc(0.5) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS fifty_pc,  percentile_disc(0.7) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS seventy_pc,  percentile_disc(0.9) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS ninety_pc FROM app_ldd.ns_baseWHERE (existing_socialhousing IS NOT NULL OR proposed_socialhousing IS NOT NULL);", 
+            "query": " select  percentile_disc(0.1) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS ten_pc,  percentile_disc(0.3) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS thirty_pc,  percentile_disc(0.5) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS fifty_pc,  percentile_disc(0.7) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS seventy_pc,  percentile_disc(0.9) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS ninety_pc FROM app_ldd.ns_base WHERE (existing_socialhousing IS NOT NULL OR proposed_socialhousing IS NOT NULL);", 
             "bands": [
                 {
                     "solstr": 0, 
@@ -368,7 +368,11 @@
             "status_rc", 
             "permissionyear", 
             "descr", 
-            "completedyear"
+            "completedyear", 
+            "comments_objecting", 
+            "comments_supporting", 
+            "proposed_socialhousing", 
+            "existing_socialhousing"
         ], 
         "polygonField": "the_geom_poly", 
         "pointField": "the_geom_pt", 

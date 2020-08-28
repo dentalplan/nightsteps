@@ -117,6 +117,9 @@ package ns_audinterface{
     foreach my $b (@{$this->{_thres}->{_pcBands}}){
       my $solbonus = 0;
       #print Dumper($rh_do->{$this->{_thres}->{_pcBands}});
+      $this->{_testtools}->outputText("MINVAL:  $b->{minval}\n");
+      $this->{_testtools}->outputText("Field: $this->{_thres}->{_pcField}\n");
+      $this->{_testtools}->outputText("Act Val: $rh_do->{$this->{_thres}->{_pcField}}\n");
       if ($rh_do->{$this->{_thres}->{_pcField}} > $b->{minval}){
         $rh_attr->{rhythmstr} = $b->{rhythmstr};
         $solbonus = $b->{solstr};
