@@ -178,7 +178,7 @@
     "databasePw": "", 
     "percentileQuery": {
         "comments_supporting": {
-            "query": " select  percentile_disc(0.1) within group (order by comments_total) AS ten_pc,  percentile_disc(0.3) within group (order by comments_total) AS thirty_pc,  percentile_disc(0.5) within group (order by comments_total) AS fifty_pc,  percentile_disc(0.7) within group (order by comments_total) AS seventy_pc,  percentile_disc(0.9) within group (order by comments_total) AS ninety_pc FROM app_ldd.ns_base WHERE comments_total IS NOT NULL;", 
+            "query": " select  percentile_disc(0.1) within group (order by comments_total) AS ten_pc,  percentile_disc(0.3) within group (order by comments_total) AS thirty_pc,  percentile_disc(0.5) within group (order by comments_total) AS fifty_pc,  percentile_disc(0.7) within group (order by comments_total) AS seventy_pc,  percentile_disc(0.9) within group (order by comments_total) AS ninety_pc FROM app_ldd.ns_base WHERE comments_total > 0;", 
             "bands": [
                 {
                     "solstr": 0, 
@@ -214,7 +214,7 @@
             ]
         }, 
         "existing_socialhousing": {
-            "query": " select  percentile_disc(0.1) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS ten_pc,  percentile_disc(0.3) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS thirty_pc,  percentile_disc(0.5) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS fifty_pc,  percentile_disc(0.7) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS seventy_pc,  percentile_disc(0.9) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS ninety_pc FROM app_ldd.ns_base WHERE (existing_socialhousing IS NOT NULL OR proposed_socialhousing IS NOT NULL);", 
+            "query": " select  percentile_disc(0.1) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS ten_pc,  percentile_disc(0.3) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS thirty_pc,  percentile_disc(0.5) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS fifty_pc,  percentile_disc(0.7) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS seventy_pc,  percentile_disc(0.9) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS ninety_pc FROM app_ldd.ns_base WHERE (existing_socialhousing > 0 OR proposed_socialhousing > 0);", 
             "bands": [
                 {
                     "solstr": 0, 
@@ -250,7 +250,7 @@
             ]
         }, 
         "proposed_socialhousing": {
-            "query": " select  percentile_disc(0.1) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS ten_pc,  percentile_disc(0.3) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS thirty_pc,  percentile_disc(0.5) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS fifty_pc,  percentile_disc(0.7) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS seventy_pc,  percentile_disc(0.9) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS ninety_pc FROM app_ldd.ns_base WHERE (existing_socialhousing IS NOT NULL OR proposed_socialhousing IS NOT NULL);", 
+            "query": " select  percentile_disc(0.1) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS ten_pc,  percentile_disc(0.3) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS thirty_pc,  percentile_disc(0.5) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS fifty_pc,  percentile_disc(0.7) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS seventy_pc,  percentile_disc(0.9) within group (order by GREATEST(existing_socialhousing, proposed_socialhousing)) AS ninety_pc FROM app_ldd.ns_base WHERE (existing_socialhousing > 0 OR proposed_socialhousing > 0);", 
             "bands": [
                 {
                     "solstr": 0, 
@@ -286,7 +286,7 @@
             ]
         }, 
         "comments_objecting": {
-            "query": " select  percentile_disc(0.1) within group (order by comments_total) AS ten_pc,  percentile_disc(0.3) within group (order by comments_total) AS thirty_pc,  percentile_disc(0.5) within group (order by comments_total) AS fifty_pc,  percentile_disc(0.7) within group (order by comments_total) AS seventy_pc,  percentile_disc(0.9) within group (order by comments_total) AS ninety_pc FROM app_ldd.ns_base WHERE comments_total IS NOT NULL;", 
+            "query": " select  percentile_disc(0.1) within group (order by comments_total) AS ten_pc,  percentile_disc(0.3) within group (order by comments_total) AS thirty_pc,  percentile_disc(0.5) within group (order by comments_total) AS fifty_pc,  percentile_disc(0.7) within group (order by comments_total) AS seventy_pc,  percentile_disc(0.9) within group (order by comments_total) AS ninety_pc FROM app_ldd.ns_base WHERE comments_total > 0;", 
             "bands": [
                 {
                     "solstr": 0, 
@@ -322,7 +322,7 @@
             ]
         }, 
         "sitearea_total": {
-            "query": " select  percentile_disc(0.1) within group (order by sitearea_total) AS ten_pc,  percentile_disc(0.3) within group (order by sitearea_total) AS thirty_pc,  percentile_disc(0.5) within group (order by sitearea_total) AS fifty_pc,  percentile_disc(0.7) within group (order by sitearea_total) AS seventy_pc,  percentile_disc(0.9) within group (order by sitearea_total) AS ninety_pc FROM app_ldd.ns_base WHERE sitearea_total IS NOT NULL;", 
+            "query": " select  percentile_disc(0.1) within group (order by sitearea_total) AS ten_pc,  percentile_disc(0.3) within group (order by sitearea_total) AS thirty_pc,  percentile_disc(0.5) within group (order by sitearea_total) AS fifty_pc,  percentile_disc(0.7) within group (order by sitearea_total) AS seventy_pc,  percentile_disc(0.9) within group (order by sitearea_total) AS ninety_pc FROM app_ldd.ns_base WHERE sitearea_total > 0.0;", 
             "bands": [
                 {
                     "solstr": 0, 
