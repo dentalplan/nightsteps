@@ -119,7 +119,7 @@
                 "having": ""
             }
         }, 
-        "otherGroupbyFields": "p.the_geom_poly, p.the_geom_pt, p.permission_date, p.completed_date, p.status_rc, p.descr, existing_socialhousing, proposed_socialhousing, sitearea_total, comments_total, comments_objecting, comments_supporting", 
+        "otherGroupbyFields": "p.the_geom_poly, p.the_geom_pt, p.borough_ref, p.permission_date, p.completed_date, p.status_rc, p.descr, existing_socialhousing, proposed_socialhousing, sitearea_total, comments_total, comments_objecting, comments_supporting", 
         "lonField": "lon"
     }, 
     "sonification": {
@@ -364,6 +364,7 @@
             "lon", 
             "completed_date", 
             "permission_id", 
+            "borough_ref", 
             "sitearea_total", 
             "status_rc", 
             "permissionyear", 
