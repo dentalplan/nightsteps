@@ -51,7 +51,7 @@ for (my $i=0;;$i++){
         }
     }
     $it->iterate;
-    usleep(10000);
+    usleep(20000);
 }
 
 
