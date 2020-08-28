@@ -115,6 +115,9 @@ package ns_telemetry{
       #    my $gpsout = `"tail $file"`;
           my @gps = <GPSLOG>;
           my $size = @gps;
+          if ($size > 60){
+            $size = 60; # only interested in readings from the last minute, otherwise better to be in error state
+          }
       #   print $gps[-1];
           for (my $i=-1; $i>=($size * -1) && $loc{success} == 0; $i-- ){
               chomp $gps[$i];
