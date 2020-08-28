@@ -34,66 +34,87 @@
         "selectOnlyFields": "date_part('year', p.permission_date) AS permissionyear, date_part('year', p.completed_date) AS completedyear ", 
         "having": "", 
         "options": {
-            "comments-objects": {
+            "in-conservationarea": {
                 "fields": "", 
                 "from": "", 
-                "where": " AND comments_objecting  > 1 ", 
-                "percentileFieldAndQuery": "comments_objecting", 
+                "where": "  AND (p.ns_type = 'major') AND p.is_in_conservationarea = TRUE ", 
+                "percentileFieldAndQuery": "proposed_socialhousing", 
                 "having": ""
             }, 
             "socialhousing-proposed": {
                 "fields": "", 
                 "from": "", 
-                "where": " AND proposed_socialhousing > 1 ", 
+                "where": "  AND (p.ns_type = 'major') AND proposed_socialhousing >= 1 ", 
                 "percentileFieldAndQuery": "proposed_socialhousing", 
+                "having": ""
+            }, 
+            "textsearch-construction": {
+                "fields": "", 
+                "from": "", 
+                "where": " AND (p.ns_type = 'major') AND (p.descr ILIKE '%construct%' OR p.descr ILIKE '%erect%' OR p.descr ILIKE '%rebuild%') ", 
+                "percentileFieldAndQuery": "sitearea_total", 
+                "having": ""
+            }, 
+            "comments-objects": {
+                "fields": "", 
+                "from": "", 
+                "where": "  AND (p.ns_type = 'major') AND comments_objecting  > 1 ", 
+                "percentileFieldAndQuery": "comments_objecting", 
                 "having": ""
             }, 
             "textsearch-demolition": {
                 "fields": "", 
                 "from": "", 
-                "where": " AND (p.descr ILIKE '%demoli%') ", 
+                "where": "  AND (p.ns_type = 'major') AND (p.descr ILIKE '%demoli%') ", 
                 "percentileFieldAndQuery": "sitearea_total", 
+                "having": ""
+            }, 
+            "trees-all": {
+                "fields": "", 
+                "from": "", 
+                "where": "  AND (p.ns_type = 'tree') ", 
+                "percentileFieldAndQuery": "comments_objecting", 
                 "having": ""
             }, 
             "everything": {
                 "fields": "", 
                 "from": "", 
-                "where": "", 
+                "where": " AND (p.ns_type = 'major')", 
                 "percentileFieldAndQuery": "sitearea_total", 
                 "having": ""
             }, 
             "comments-supports": {
                 "fields": "", 
                 "from": "", 
-                "where": " AND comments_supporting  > 1 ", 
+                "where": "  AND (p.ns_type = 'major') AND comments_supporting  > 1 ", 
                 "percentileFieldAndQuery": "comments_supporting", 
                 "having": ""
             }, 
             "socialhousing-exists": {
                 "fields": "", 
                 "from": "", 
-                "where": " AND existing_socialhousing > 1 ", 
+                "where": "  AND (p.ns_type = 'major') AND existing_socialhousing >= 1 ", 
                 "percentileFieldAndQuery": "existing_socialhousing", 
                 "having": ""
             }, 
             "textsearch-changeofuse": {
                 "fields": "", 
                 "from": "", 
-                "where": " AND (p.descr ILIKE '%change of use%') ", 
+                "where": "  AND (p.ns_type = 'major') AND (p.descr ILIKE '%change of use%') ", 
                 "percentileFieldAndQuery": "sitearea_total", 
                 "having": ""
             }, 
             "socialhousing-decrease": {
                 "fields": "", 
                 "from": "", 
-                "where": " AND (proposed_socialhousing - existing_socialhousing <= -1)", 
+                "where": "  AND (p.ns_type = 'major') AND (proposed_socialhousing - existing_socialhousing <= -1)", 
                 "percentileFieldAndQuery": "sitearea_total", 
                 "having": ""
             }, 
             "socialhousing-increase": {
                 "fields": "", 
                 "from": "", 
-                "where": " AND (proposed_socialhousing - existing_socialhousing >= 1) ", 
+                "where": "  AND (p.ns_type = 'major') AND (proposed_socialhousing - existing_socialhousing >= 1) ", 
                 "percentileFieldAndQuery": "sitearea_total", 
                 "having": ""
             }
