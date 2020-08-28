@@ -322,7 +322,7 @@
             ]
         }, 
         "sitearea_total": {
-            "query": " select  percentile_disc(0.1) within group (order by sitearea_total) AS ten_pc,  percentile_disc(0.3) within group (order by sitearea_total) AS thirty_pc,  percentile_disc(0.5) within group (order by sitearea_total) AS fifty_pc,  percentile_disc(0.7) within group (order by sitearea_total) AS seventy_pc,  percentile_disc(0.9) within group (order by sitearea_total) AS ninety_pc FROM app_ldd.ns_base WHERE sitearea IS NOT NULL;", 
+            "query": " select  percentile_disc(0.1) within group (order by sitearea_total) AS ten_pc,  percentile_disc(0.3) within group (order by sitearea_total) AS thirty_pc,  percentile_disc(0.5) within group (order by sitearea_total) AS fifty_pc,  percentile_disc(0.7) within group (order by sitearea_total) AS seventy_pc,  percentile_disc(0.9) within group (order by sitearea_total) AS ninety_pc FROM app_ldd.ns_base WHERE sitearea_total IS NOT NULL;", 
             "bands": [
                 {
                     "solstr": 0, 
