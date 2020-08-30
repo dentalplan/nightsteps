@@ -36,8 +36,8 @@ package ns_loopit{
             _option => $rh->{option},
             _maxdist => $rh->{maxdist},
             _query => $rh->{query},
-            _statuslightfile => '/home/pi/nsdata/gpio/dig1.o',
-            _datalightfile => '/home/pi/nsdata/gpio/dig2.o',
+            _datalightfile => '/home/pi/nsdata/gpio/dig1.o',
+            _warnlightfile => '/home/pi/nsdata/gpio/dig2.o',
             _lastdataset => {viewcount=>0, viewIDs=>{}, detectcount=>0, detectcount_l=>0, detectcount_r=>0, dsig=>[]},
             _testtools => ns_testtools->new($rh->{printmsg}),
             _telem => ns_telemetry->new,
@@ -86,7 +86,7 @@ package ns_loopit{
 #        my @fn = ("pwmtest1.o", "pwmtest3.o");
         my @demotrack = ( {src=>"/home/pi/nsdata/gpio/dsig_demo_l.o", dst=>"/home/pi/nsdata/gpio/dsig_l.o"},
                           {src=>"/home/pi/nsdata/gpio/dsig_demo_r.o", dst=>"/home/pi/nsdata/gpio/dsig_r.o"},
-                          {src=>"/home/pi/nsdata/gpio/dig1_demo.o", dst=>$this->{_statuslightfile}} );
+                          {src=>"/home/pi/nsdata/gpio/dig1_demo.o", dst=>$this->{_datalightfile}} );
         my $size = @demotrack;
         for(my $i=0; $i<$size; $i++){
             $this->{_testtools}->outputText("cp $demotrack[$i]->{src} $demotrack[$i]->{dst}");
@@ -137,14 +137,12 @@ package ns_loopit{
                 my @datalight = ("q", "h10","l25","h10", "l50");
                 $this->{_aud}->physSendInstructions($this->{_datalightfile}, \@datalight);
             }
-            my @statuslight = ("t", "h1500", "l1");
-            $this->{_aud}->physSendInstructions($this->{_statuslightfile}, \@statuslight);
 #        }elsif ($this->{_soundmode} == 2){
         }else{
             $this->{_lastdataset}->{dsig} = $this->{_aud}->createEmptyScore; 
-            my @statuslight = ("t", "h150", "l100", "h50", "l100");
+            my @warnlight = ("t", "h50", "l100");
             $this->{_testtools}->outputText("sending status light signal\n");
-            $this->{_aud}->physSendInstructions($this->{_statuslightfile}, \@statuslight);
+            $this->{_aud}->physSendInstructions($this->{_warnlightfile}, \@warnlight);
         }
     }
 

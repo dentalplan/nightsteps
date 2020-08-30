@@ -17,9 +17,11 @@ package ns_telemetry{
             _gpslog => 'gpsout.txt',
             _gpspath => '/home/pi/nsdata/',
             _compass => ns_gpio->new('c',0),
+            _compasslog => {count=>0, value=>0},
             _presPosition => {lat =>'', lon =>'', course=>'', time=>''},
             _indicatorLED => ns_gpio->new('digOut',3),
-            _LEDwarnings => {gps=>['t','l100','h1000','l200','h1000','l1000']},
+            _LEDwarnings => {gps=>['t','l100','h500','l200','h500','l1000'],
+                            compass=>['t','l50','h50','l50','h50','l50','h50','l50']},
             _LEDsuccess => {gps=>['t','l300','h100','l1200']},
             _GPSchecks => 0
         };
@@ -128,12 +130,21 @@ package ns_telemetry{
                   $loc{lon} = $2;
                   $loc{time} = $3;
                   $loc{course} = $this->{_compass}->readValue;
+                  if ($loc{course} == $this->{_compasslog}->{value}){
+                    $this->{_compasslog}->{count} += 1
+                  }else{
+                    $this->{_compasslog}->{value} = $loc{course};
+                    $this->{_compasslog}->{count} = 0;
+                  }
+                  if ($this->{_compasslog}->{count} > 150){
+                    $this->{_indicatorLED}->writeInstructions($this->{_LEDwarnings}->{compass});
+                  }
   #                $loc{course} = $4;
                   print "\n Time: $loc{time} Lon: $loc{lon} Lat: $loc{lat} Course: $loc{course}\n";
                   unless ($loc{lat} eq "nan" || $loc{lon} eq "nan"){
                     $loc{success} = 1;
                     $this->{_presPosition} = \%loc;
-                    $this->{_indicatorLED}->writeInstructions($this->{_LEDsuccess}->{gps});
+                  #  $this->{_indicatorLED}->writeInstructions($this->{_LEDsuccess}->{gps});
                   }else{
                     print "NaN\n";
                     $loc{success} = 0;
