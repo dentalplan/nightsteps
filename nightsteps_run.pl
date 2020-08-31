@@ -6,7 +6,7 @@ use ns_loopit;
 use ns_config;
 use ns_gpio;
 use DateTime;
-use Time::HiRes qw( usleep);
+use Time::HiRes qw( usleep time);
 
 
 #set up modules
@@ -29,7 +29,10 @@ my $it = ns_loopit->new(    {
                                 maxdist => $maxdist
                             });
 my $lastread = 0;
+my $timenow = time;
+my $lasttime = time;
 for (my $i=0;;$i++){
+    $lasttime = $timenow;
     my $read = $switch1->readValue;
     if ($read + 10 < $lastread || $read - 10 > $lastread){    print "SWITCH READING: $read\n"};
     $lastread = $read;
@@ -51,7 +54,13 @@ for (my $i=0;;$i++){
         }
     }
     $it->iterate;
-    usleep(20000);
+    usleep(10000);
+    $timenow = time;
+    while(($timenow - $lasttime) < 0.5){
+      usleep(100000);
+      print "pausing\n";
+      $timenow = time;
+    }
 }
 
 

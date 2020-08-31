@@ -58,7 +58,7 @@
             "comments-objects": {
                 "fields": "", 
                 "from": "", 
-                "where": "  AND (p.ns_type = 'major') AND comments_objecting  > 1 ", 
+                "where": "  AND (p.ns_type = 'major') AND comments_objecting  >= 1 ", 
                 "percentileFieldAndQuery": "comments_objecting", 
                 "having": ""
             }, 
@@ -86,7 +86,7 @@
             "comments-supports": {
                 "fields": "", 
                 "from": "", 
-                "where": "  AND (p.ns_type = 'major') AND comments_supporting  > 1 ", 
+                "where": "  AND (p.ns_type = 'major') AND comments_supporting  >= 1 ", 
                 "percentileFieldAndQuery": "comments_supporting", 
                 "having": ""
             }, 
@@ -192,22 +192,22 @@
                     "percentileName": "ten_pc"
                 }, 
                 {
-                    "solstr": 6, 
+                    "solstr": 4, 
                     "rhythmstr": 1, 
                     "percentileName": "thirty_pc"
                 }, 
                 {
-                    "solstr": 10, 
+                    "solstr": 6, 
                     "rhythmstr": 2, 
                     "percentileName": "fifty_pc"
                 }, 
                 {
-                    "solstr": 14, 
+                    "solstr": 10, 
                     "rhythmstr": 3, 
                     "percentileName": "seventy_pc"
                 }, 
                 {
-                    "solstr": 20, 
+                    "solstr": 14, 
                     "rhythmstr": 4, 
                     "percentileName": "ninety_pc"
                 }
@@ -228,22 +228,22 @@
                     "percentileName": "ten_pc"
                 }, 
                 {
-                    "solstr": 6, 
+                    "solstr": 4, 
                     "rhythmstr": 1, 
                     "percentileName": "thirty_pc"
                 }, 
                 {
-                    "solstr": 10, 
+                    "solstr": 6, 
                     "rhythmstr": 2, 
                     "percentileName": "fifty_pc"
                 }, 
                 {
-                    "solstr": 14, 
+                    "solstr": 10, 
                     "rhythmstr": 3, 
                     "percentileName": "seventy_pc"
                 }, 
                 {
-                    "solstr": 20, 
+                    "solstr": 14, 
                     "rhythmstr": 4, 
                     "percentileName": "ninety_pc"
                 }
@@ -264,22 +264,22 @@
                     "percentileName": "ten_pc"
                 }, 
                 {
-                    "solstr": 6, 
+                    "solstr": 4, 
                     "rhythmstr": 1, 
                     "percentileName": "thirty_pc"
                 }, 
                 {
-                    "solstr": 10, 
+                    "solstr": 6, 
                     "rhythmstr": 2, 
                     "percentileName": "fifty_pc"
                 }, 
                 {
-                    "solstr": 14, 
+                    "solstr": 10, 
                     "rhythmstr": 3, 
                     "percentileName": "seventy_pc"
                 }, 
                 {
-                    "solstr": 20, 
+                    "solstr": 14, 
                     "rhythmstr": 4, 
                     "percentileName": "ninety_pc"
                 }
@@ -300,22 +300,22 @@
                     "percentileName": "ten_pc"
                 }, 
                 {
-                    "solstr": 6, 
+                    "solstr": 4, 
                     "rhythmstr": 1, 
                     "percentileName": "thirty_pc"
                 }, 
                 {
-                    "solstr": 10, 
+                    "solstr": 6, 
                     "rhythmstr": 2, 
                     "percentileName": "fifty_pc"
                 }, 
                 {
-                    "solstr": 14, 
+                    "solstr": 10, 
                     "rhythmstr": 3, 
                     "percentileName": "seventy_pc"
                 }, 
                 {
-                    "solstr": 20, 
+                    "solstr": 14, 
                     "rhythmstr": 4, 
                     "percentileName": "ninety_pc"
                 }
@@ -336,22 +336,22 @@
                     "percentileName": "ten_pc"
                 }, 
                 {
-                    "solstr": 6, 
+                    "solstr": 4, 
                     "rhythmstr": 1, 
                     "percentileName": "thirty_pc"
                 }, 
                 {
-                    "solstr": 10, 
+                    "solstr": 6, 
                     "rhythmstr": 2, 
                     "percentileName": "fifty_pc"
                 }, 
                 {
-                    "solstr": 14, 
+                    "solstr": 10, 
                     "rhythmstr": 3, 
                     "percentileName": "seventy_pc"
                 }, 
                 {
-                    "solstr": 20, 
+                    "solstr": 14, 
                     "rhythmstr": 4, 
                     "percentileName": "ninety_pc"
                 }
@@ -387,17 +387,17 @@
             {
                 "maxdist": 80, 
                 "repeats": 1, 
-                "solstr": 55
+                "solstr": 50
             }, 
             {
                 "maxdist": 50, 
                 "repeats": 2, 
-                "solstr": "65"
+                "solstr": "60"
             }, 
             {
                 "maxdist": 30, 
                 "repeats": 3, 
-                "solstr": "75"
+                "solstr": "70"
             }
         ], 
         "centreThresholds": [
@@ -424,27 +424,27 @@
             {
                 "maxdist": 50, 
                 "repeats": 4, 
-                "solstr": 70
+                "solstr": 65
             }, 
             {
                 "maxdist": 40, 
                 "repeats": 6, 
-                "solstr": 75
+                "solstr": 70
             }, 
             {
                 "maxdist": 30, 
                 "repeats": 8, 
-                "solstr": 75
+                "solstr": 70
             }, 
             {
                 "maxdist": 25, 
                 "repeats": 9, 
-                "solstr": 80
+                "solstr": 75
             }, 
             {
                 "maxdist": 15, 
                 "repeats": 12, 
-                "solstr": 80
+                "solstr": 75
             }
         ]
     }, 
