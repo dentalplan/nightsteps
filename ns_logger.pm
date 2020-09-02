@@ -64,7 +64,7 @@ package ns_logger{
         if ($this->{_loop}->{_lastdataset}->{viewcount}) {
           print LOG "$this->{_loop}->{_lastdataset}->{viewcount},$this->{_loop}->{_lastdataset}->{datacount},";
         }else{
-          print LOG '"n/a","n/a"';
+          print LOG '"n/a","n/a",';
         }
         print LOG "$daemon{'gpio-a-all.py'},$daemon{'compass.py'},$daemon{'sig.py'},$daemon{'dig.py'}";
         if ($this->{_dsigLogging}){
