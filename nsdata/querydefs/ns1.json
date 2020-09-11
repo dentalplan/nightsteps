@@ -34,6 +34,13 @@
         "selectOnlyFields": "date_part('year', p.permission_date) AS permissionyear, date_part('year', p.completed_date) AS completedyear ", 
         "having": "", 
         "options": {
+            "change-to-openspace": {
+                "fields": "", 
+                "from": "", 
+                "where": "  AND (p.ns_type = 'major') AND (p.change_to_openspace = TRUE) ", 
+                "percentileFieldAndQuery": "sitearea_total", 
+                "having": ""
+            }, 
             "in-conservationarea": {
                 "fields": "", 
                 "from": "", 
@@ -46,6 +53,13 @@
                 "from": "", 
                 "where": "  AND (p.ns_type = 'major') AND proposed_socialhousing >= 1 ", 
                 "percentileFieldAndQuery": "proposed_socialhousing", 
+                "having": ""
+            }, 
+            "bat-mitigation": {
+                "fields": "", 
+                "from": "", 
+                "where": "  AND (p.ns_type = 'major') AND p.known_bat_mitigation = TRUE ", 
+                "percentileFieldAndQuery": "sitearea_total", 
                 "having": ""
             }, 
             "textsearch-construction": {
@@ -115,6 +129,20 @@
                 "fields": "", 
                 "from": "", 
                 "where": "  AND (p.ns_type = 'major') AND (proposed_socialhousing - existing_socialhousing >= 1) ", 
+                "percentileFieldAndQuery": "sitearea_total", 
+                "having": ""
+            }, 
+            "change-to-nonres": {
+                "fields": "", 
+                "from": "", 
+                "where": "  AND (p.ns_type = 'major') AND (p.change_to_floorspace = TRUE OR change_to_nonresaccom = TRUE) ", 
+                "percentileFieldAndQuery": "sitearea_total", 
+                "having": ""
+            }, 
+            "change-to-housing": {
+                "fields": "", 
+                "from": "", 
+                "where": "  AND (p.ns_type = 'major') AND p.change_to_housing = TRUE ", 
                 "percentileFieldAndQuery": "sitearea_total", 
                 "having": ""
             }
