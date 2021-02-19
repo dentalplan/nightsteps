@@ -1,6 +1,6 @@
 # Nightsteps - the heart/mind/something of the London Development Datasniffer
 
-Nightsteps is the operating software for the London Development Datasniffer.
+Nightsteps is the operating software for the London Development Datasniffer. It's what makes the lights blink and the solenoids click.
 
 The London Development Datasniffer is a device for investigating and interrogating the London Development Database and other
 planning datasets... whilst on a bat walk. Why would you do this, you ask? Bat walks are engaging events (which, let's face 
