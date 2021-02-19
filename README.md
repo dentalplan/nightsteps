@@ -1,6 +1,7 @@
 # Nightsteps - the heart/mind/something of the London Development Datasniffer
 
-Nightsteps is the operating software for the London Development Datasniffer. It's what makes the lights blink and the solenoids click.
+Nightsteps is the operating software for the London Development Datasniffer. It's what makes the lights blink and 
+the solenoids click.
 
 The London Development Datasniffer is a device for investigating and interrogating the London Development Database and other
 planning datasets... whilst on a bat walk. Why would you do this, you ask? Bat walks are engaging events (which, let's face 
@@ -26,9 +27,12 @@ The main Nightsteps program
 in order to query the London Development Database and/or whatever other planning datasets have been incorporated. It then creates
 two score files that consistute the output of the device.
 * *ns_loop.pm*: This module covers the main logic and run order of the program.
-* *ns_dbinterface*: This is the main interface to the database
-* *ns_audinterface*:
-* *ns_logger*:
+* *ns_dbinterface.pm*: This is the main interface to the database
+* *ns_audinterface.pm*: Presently, this module handles the signal logic for the solenoids or whatever electromechanical output
+  you want to hook up.
+* *ns_gpio.pm*: This interfaces with the Pi's input and output pins, handling things like control input and compass readings
+* *ns_telemetry.pm*: This handles some matters relating to spatial calculation, but in truth this is mostly done by postgis now
+* *ns_logger*: logging functionality for the main program.
 
 A clutch of python daemons:
 
