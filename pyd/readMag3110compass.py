@@ -6,7 +6,7 @@ compass = mag3110.compass()
 #compass.calibrate()
 compass.loadCalibration()
 c = 0
-filestocheck = 4
+filestocheck = 2
 state = 1
 waitct = 0
 waitmax = 6
@@ -33,8 +33,8 @@ while True:
     print >> f, str(c) 
     f.close()
     for i in range(0,1000):
-        f = open(path + '0.c', 'a')
         try:
+#            print "gettin compass"
             mag = checkMagState()
             if mag == False:
                 if state == 1:
@@ -43,16 +43,19 @@ while True:
                     c += adjust
                     if c >= 360:
                         c -= 360
-                    print >> f, str(c)
+#                    print "reading"
                 else:
                     if waitct >= waitmax:
                         state = 1
                     waitct += 1
             else:
+                print "mag warning!"
                 state = 0
                 waitct = 0
         except:
             print "Error getting compass"
             time.sleep(1)
-        time.sleep(0.05)
+        f = open(path + '0.c', 'a')
+        print >> f, str(c)
         f.close()
+        time.sleep(0.05)

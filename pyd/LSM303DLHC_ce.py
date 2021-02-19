@@ -19,7 +19,7 @@ class lsm303:
     self.calibrations = {'maxX':0, 'minX':0, 'maxY':0, 'minY':0, 'maxZ':0, 'minZ':0}
     # The offset is what is acutally applied to make it more accurate
     self.offset = {'x':0, 'y':0, 'z':0}
-    self.calibrationFile = "/home/pi/nsdata/lsm300cal"
+    self.calibrationFile = "/home/pi/nsdata/lsm303.cal"
 
   def calibrate(self):
     calibrations = self.calibrations
@@ -28,42 +28,48 @@ class lsm303:
     while True:
       try:
         change = False
-        reading = self.getMagReading()
-        if start:
-          # get an initial reading, setting everything to zero means that the mimum
-          # only gets updated if it goes negative
-          calibrations['maxX'] = reading['x']
-          calibrations['minX'] = reading['x']
-          calibrations['maxY'] = reading['y']
-          calibrations['minY'] = reading['y']
-          calibrations['maxZ'] = reading['z']
-          calibrations['minZ'] = reading['z']
-          start = False
-        # X calibration
-        if reading['x'] > calibrations['maxX']:
-          calibrations['maxX'] = reading['x']
-          change = True
-        if reading['x']< calibrations['minX']:
-          calibrations['minX'] = reading['x']
-          change = True
-        # Y calibrations
-        if reading['y'] > calibrations['maxY']:
-          calibrations['maxY'] = reading['y']
-          change = True
-        if reading['y']< calibrations['minY']:
-          calibrations['minY'] = reading['y']
-          change = True
-        # Z calibrations
-        if reading['z'] > calibrations['maxZ']:
-          calibrations['maxZ'] = reading['z']
-          change = True
-        if reading['z']< calibrations['minZ']:
-          calibrations['minZ'] = reading['z']
-          change = True
-        if change:
-          print('Calibration Update:')
-          print(json.dumps(calibrations, indent=2))
-        time.sleep(0.1)
+        try:
+          reading = self.getMagReading()
+        except:
+          print "mag error"
+          time.sleep(0.1)
+        else:
+          if start:
+            # get an initial reading, setting everything to zero means that the mimum
+            # only gets updated if it goes negative
+            calibrations['maxX'] = reading['x']
+            calibrations['minX'] = reading['x']
+            calibrations['maxY'] = reading['y']
+            calibrations['minY'] = reading['y']
+            calibrations['maxZ'] = reading['z']
+            calibrations['minZ'] = reading['z']
+            start = False
+          # X calibration
+          if reading['x'] > calibrations['maxX']:
+            calibrations['maxX'] = reading['x']
+            change = True
+          if reading['x']< calibrations['minX']:
+            calibrations['minX'] = reading['x']
+            change = True
+          # Y calibrations
+          if reading['y'] > calibrations['maxY']:
+            calibrations['maxY'] = reading['y']
+            change = True
+          if reading['y']< calibrations['minY']:
+            calibrations['minY'] = reading['y']
+            change = True
+          # Z calibrations
+          if reading['z'] > calibrations['maxZ']:
+            calibrations['maxZ'] = reading['z']
+            change = True
+          if reading['z']< calibrations['minZ']:
+            calibrations['minZ'] = reading['z']
+            change = True
+          if change:
+            print('Calibration Update:')
+            print(json.dumps(calibrations, indent=2))
+            self.saveCalibration()
+          time.sleep(0.1)
       except KeyboardInterrupt:
         print('saving calibration')
         self.saveCalibration()

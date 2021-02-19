@@ -36,13 +36,12 @@ if __name__ == '__main__':
     time.sleep(1)
     while True:
       #It may take a second or two to get good data
-      i +=1
-      if i>600:
+      if i>600 or i == 0:
         now = datetime.now()
         logfile = now.strftime("gps%Y%m%d-%H%M%S.txt")
         copyfile(fileout, logdir + "/" + logfile)
         filemode = 'w'
-        i = 0
+        i = 1
       else:
         filemode = 'a'
       with open(fileout, filemode) as f:
@@ -54,6 +53,7 @@ if __name__ == '__main__':
         f.write(str(gpsd.fix.time))
         f.write("\n")
       time.sleep(1) #set to whatever
+      i +=1
  
   except (KeyboardInterrupt, SystemExit): #when you press ctrl+c
     print "\nKilling Thread..."

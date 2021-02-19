@@ -34,6 +34,21 @@ package ns_audlibrary{
       return $rtn;
   }
 
+  sub singleStrike{
+    my ($this, $ra_sig, $pos, $rh_core, $rh_arg) = @_;
+    my $rh_ele = {dur=> $rh_core->{dur},
+                  force=> $rh_core->{force}};
+    $ra_sig->[$pos]->{dur} += $rh_core->{dur};
+    my $m = 1;
+    $ra_sig = $this->modSigPosition($pos, $m, $ra_sig, $rh_core);
+    if ($rh_core->{force} > 0 && $ra_sig->[$pos]->{force} == 0){
+      $ra_sig->[$pos]->{force} += 45 + $rh_core->{force};
+    }else{
+      $ra_sig->[$pos]->{force} += $rh_core->{force};
+    } 
+    return $ra_sig;
+  }
+
   sub beat{
     my ($this, $ra_sig, $pos, $rh_core, $rh_arg) = @_;
     $ra_sig->[$pos]->{dur} += $rh_core->{dur};
@@ -45,6 +60,11 @@ package ns_audlibrary{
       $ra_sig->[$pos]->{force} += $rh_core->{force};
     } 
     return $ra_sig;
+  }
+
+  sub iamb{
+    my ($this, $ra_sig, $pos, $rh_core, $rh_arg) = @_;
+
   }
 
   sub rhythm{

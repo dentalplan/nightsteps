@@ -52,7 +52,8 @@ while True:
             if ha == 0:
               print "zero\n"
             with open(path + '0.c', 'a') as f:
-              f.write(str(ha) + "\n") 
+              f.write(str(ha) + "\n")
+            #print ha
         else:
             if waitct >= waitmax:
                 state = 1
