@@ -4,14 +4,7 @@
 # subroutinte for a single iteration of the logic, before returning#
 # to nightsteps_run to see if the user has switched                #
 ####################################################################
-# Logics                                                           #
-# · LRDBespeak1     Reads out house sale data from the Land        #
-#                   Registry database                              #
-#                                                                  #
-# - LRDBchuck1      Produces chuck sonification of Land Registry   #
-#                   house sale data and outputs via sound card     #
-#                                                                  #
-# -    
+
 package ns_loopit{
     use strict;
     use warnings;
