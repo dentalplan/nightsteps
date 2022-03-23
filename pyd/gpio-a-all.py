@@ -1,3 +1,19 @@
+#    GPIO-A-ALL --> analogue input control daemon
+#    Copyright (C) 2022 Cliff Hammett
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import time
 import os
 # Import SPI library (for hardware SPI) and MCP3008 library.
@@ -11,7 +27,6 @@ mcp = Adafruit_MCP3008.MCP3008(spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE))
 
 a = [0,0,0,0,0,0,0,0]
 path = "/home/pi/nsdata/gpio/"
-#print >> f, "fucking work dman you"
 while True:
 
     line = ""
@@ -24,11 +39,7 @@ while True:
             value = '{num:04d}'.format(num=a[i])
             line += str(value) + "-"
         print >> f, line
-#        print line
         f.close()
-#        print "csy"
-#        localtime = time.asctime(time.localtime(time.time()))
-#        print "written " + line + " to a.a at " + localtime
         time.sleep(0.1)
     time.sleep(0.05)
     f = open(path + "a.a", "w")

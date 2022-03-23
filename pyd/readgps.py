@@ -36,7 +36,7 @@ if __name__ == '__main__':
     time.sleep(1)
     while True:
       #It may take a second or two to get good data
-      if i>600 or i == 0:
+      if i>300 or i == 0:
         now = datetime.now()
         logfile = now.strftime("gps%Y%m%d-%H%M%S.txt")
         copyfile(fileout, logdir + "/" + logfile)

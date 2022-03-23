@@ -1,3 +1,19 @@
+#    DIG --> queued output control daemon for pi pins 
+#    Copyright (C) 2022 Cliff Hammett
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from gpiozero import DigitalOutputDevice
 import os
 import time
@@ -17,17 +33,19 @@ from collections import deque
 
 digOut = [DigitalOutputDevice(27), DigitalOutputDevice(22)]
 state = [0,0]
-magnetic = [False,False]
+#stripped out magnetic checks, as this has only been used for leds for a while
+#magnetic = [False,False]
 #look in the following files for instructions
 filepath = ["/home/pi/nsdata/gpio/dig1.o", "/home/pi/nsdata/gpio/dig2.o"]
-statepath = ["/home/pi/nsdata/gpio/mag1.s", "/home/pi/nsdata/gpio/mag2.s"]
+#statepath = []
+#statepath = ["/home/pi/nsdata/gpio/mag1.s", "/home/pi/nsdata/gpio/mag2.s"]
 #make two double ended queues for instructions, one for eeach of the digital outs
 queuedInstruction = [deque(['s']), deque(['s'])]
 activeInstruction = [deque(['s']), deque(['s'])]
-for sp in statepath:
-    with open(sp, "w") as s:
-        s.write("0")
-        s.close()
+#for sp in statepath:
+#    with open(sp, "w") as s:
+#        s.write("0")
+#        s.close()
 for instr in activeInstruction:
     instr.clear()
 for instr in queuedInstruction:
@@ -48,13 +66,11 @@ def processInstr(newInstr, instr):
         ni.rstrip()
         if (ni == 'q' or ni == 'i'):
             mode = ni
-#            print "found q"
         elif (ni == 't'):
             instr.clear()
             mode = 'q'
         elif (mode == 'q'):
             instr.append(ni)
-#            print "appended\n"
         elif (mode == 'i'):
             instr.appendleft(ni)            
     return instr
@@ -66,10 +82,8 @@ while True:
     nowtimemillis = int(round(time.time() * 1000))
     gap = nowtimemillis - oldtimemillis
     for i in range(0,len(activeInstruction)):
-#        print "working with " + str(i)
         if (len(activeInstruction[i]) > 0):
             l = len(activeInstruction[i])
-            #print "We have " + str(l) + " instructions \n" 
             mi = activeInstruction[i].popleft()
             matchObjHigh = re.match(r'h(\d+)', mi, re.M|re.I)
             matchObjLow = re.match(r'l(\d+)', mi, re.M|re.I)
@@ -77,12 +91,11 @@ while True:
                 #print "matched high"
                 if (state[i] == 0):
                     state[i] = 1
-                    if magnetic[i]:
-                        with open(statepath[i], "w") as s:
-                            s.write("1")
-                            s.close()
+#                    if magnetic[i]:
+#                        with open(statepath[i], "w") as s:
+#                            s.write("1")
+#                            s.close()
                     digOut[i].on()
-                    #print str(i) + " on\n"
                 millis = int(matchObjHigh.group(1)) - gap
                 if (millis > 0):
                     ni = 'h' + str(millis)
@@ -92,10 +105,10 @@ while True:
                 if (state[i] == 1):
                     state[i] = 0
                     digOut[i].off()
-                    if magnetic[i]:
-                        with open(statepath[i], "w") as s:
-                            s.write("0")
-                            s.close()
+#                    if magnetic[i]:
+#                        with open(statepath[i], "w") as s:
+#                            s.write("0")
+#                            s.close()
                     #print str(i) + "off\n"
                 millis = int(matchObjLow.group(1)) - gap
                 if (millis > 0):
@@ -103,18 +116,8 @@ while True:
                     activeInstruction[i].appendleft(ni)
         elif (os.path.exists(filepath[i])):
                 newInstr = getInstrFromFile(filepath[i])
-                #print "removing file\n"
                 os.remove(filepath[i])
                 activeInstruction[i] = processInstr(newInstr, activeInstruction[i])
     oldtimemillis = nowtimemillis
     time.sleep(0.005)
-
-#    if (state == 0):
-#        state = 1
-#        sol.on()
-#        sleep(0.2)
-#    else:
-#        state = 0
-#        sol.off()
-#        sleep(2)
     

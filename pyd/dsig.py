@@ -1,7 +1,25 @@
+#    DSIG --> signal output control daemon 
+#    Copyright (C) 2022 Cliff Hammett
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+
 from gpiozero import PWMOutputDevice
 from gpiozero import DigitalOutputDevice
 import os
 import time
+import datetime
 import re
 import random
 from collections import deque
@@ -280,3 +298,6 @@ while True:
     for fp in range (0, len(filepath)):
         if i >= instrSize[fp]:
             i = 0
+            now = datetime.datetime.now()
+            #print("Current date and time: ")
+            #print(str(now))
