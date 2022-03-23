@@ -11,19 +11,19 @@ from collections import deque
 #-------------|---------------------------------------------------------#
 
 #digOut = [DigitalOutputDevice(5), DigitalOutputDevice(6)]
-out = [PWMOutputDevice(12), PWMOutputDevice(13), DigitalOutputDevice(6), DigitalOutputDevice(23)]
-outType = ["pwm","pwm","dig", "dig"]
-state = [0,0,0,0]
+out = [PWMOutputDevice(12), PWMOutputDevice(13), DigitalOutputDevice(23)]
+outType = ["pwm","pwm","dig"]
+state = [0,0,0]
 basebeat = float(70)
 baseSpeedDiv = float(270)
 speedDivider = baseSpeedDiv 
 beatlength = basebeat/speedDivider
-magnetic = [True,True,True,False]
+magnetic = [True,True,False]
 compassPaused = False
 #look in the following files for instructions
 speedDivPath = "/home/pi/nsdata/gpio/sig_speeddiv.o"
-filepath = ["/home/pi/nsdata/gpio/sig_r.o", "/home/pi/nsdata/gpio/sig_l.o", "/home/pi/nsdata/gpio/sig_b.o", "/home/pi/nsdata/gpio/sig_i.o"]
-statepath = ["/home/pi/nsdata/gpio/mag1.s", "/home/pi/nsdata/gpio/mag2.s", "/home/pi/nsdata/gpio/mag3.s"] #, "/home/pi/nsdata/gpio/mag3.s"]
+filepath = ["/home/pi/nsdata/gpio/sig_r.o", "/home/pi/nsdata/gpio/sig_l.o", "/home/pi/nsdata/gpio/sig_i.o"]
+statepath = ["/home/pi/nsdata/gpio/mag1.s", "/home/pi/nsdata/gpio/mag2.s"] #, "/home/pi/nsdata/gpio/mag3.s"]
 #make two double ended queues for instructions, one for eeach of the digital outs
 #queuedInstruction = [deque(['s']), deque(['s']), deque(['s'])]
 activeInstruction = [{'force':0.0, 'dur':0.0}, {'force':0.0, 'dur':0.0}, {'force':0.0, 'dur':0.0}, {'force':0.0, 'dur':0.0}]#, deque(['s'])]
@@ -102,7 +102,7 @@ while True:
             if i < instrSize[f]:
                 if t > (beatlength - (strikelength + offset)) and t <= (beatlength - offset) and (state[f] == 0):
                         state[f] = 1.0
-                        if magnetic[f] and compassPaused == False:
+                        if magnetic[f] and compassPaused == False and (activeInstruction[f]['force'] + activeInstruction[f]['fmod']) > 0:
                             compassPaused = True
                             with open(statepath[f], "w") as s:
                                 s.write("1")
