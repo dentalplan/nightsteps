@@ -1,3 +1,21 @@
+#    CONVERTGEOTOLATLON --> conversion script to translate LDD from 
+#    easting/northing to lat/lon 
+#    Copyright (C) 2022 Cliff Hammett
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 import io
 import sys
 import pyproj
@@ -8,12 +26,11 @@ import re
 import json
 
 #Connect to the database and make the cursor
-settingsFile = '/home/pi/nsdata/querydefs/ldd1.json'
-with open(settingsFile) as scr:
-  settings = json.loads(scr.read())
-n = settings['databaseName']
-pw = settings['databasePw']
-dbConnect = psycopg2.connect("dbname='" + n + "' user='pi' host='localhost' password='" + pw + "'")
+
+n = 'ldd'
+u = raw_input("Username:")
+pw = getpass.getpass("Password:")
+dbConnect = psycopg2.connect("dbname='" + n + "' user='" + u + "' host='localhost' password='" + pw + "'")
 #dbConnect = psycopg2.connect("dbname='ldd' user='ldd' host='localhost' password=''")
 cursor = dbConnect.cursor(cursor_factory=psycopg2.extras.DictCursor)
 scope = sys.argv[1]

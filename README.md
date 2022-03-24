@@ -32,7 +32,7 @@ two score files that consistute the output of the device.
   you want to hook up.
 * *ns_gpio.pm*: This interfaces with the Pi's input and output pins, handling things like control input and compass readings
 * *ns_telemetry.pm*: This handles some matters relating to spatial calculation, but in truth this is mostly done by postgis now
-* *ns_logger*: logging functionality for the main program.
+* *ns_logger.pm*: logging functionality for the main program.
 
 A clutch of python daemons:
 
@@ -134,13 +134,17 @@ called '/home/pi/nsdata'
 ## Setting up Postgre SQL
 
 as postgres user in postgres database
-* CREATE ROLE ldd login nosuperuser inherit nocreatedb nocreaterole noreplicationi
-* CREATE DATABASE ldd OWNER ldd
-* CREATE SCHEMA app\_ldd AUTHORIZATION ldd;
+```
+CREATE ROLE ldd login nosuperuser inherit nocreatedb nocreaterole noreplicationi
+CREATE DATABASE ldd OWNER ldd
+CREATE SCHEMA app\_ldd AUTHORIZATION ldd;
+```
 
 as postgres user in ldd database
-* CREATE EXTENSION postgis;
-* CREATE EXTENSION postgis\_topology;
+```
+CREATE EXTENSION postgis;
+CREATE EXTENSION postgis\_topology;
+```
 
 Get the LDD sql extract: https://data.london.gov.uk/dataset/london-development-database-sql-extract
 
@@ -155,21 +159,36 @@ to:
 local   all    all     md5
 
 then as postgres user in ldd database:
-* grant all privileges on database ldd to pi;
-* grant usage on schema app\_ldd to pi;
-* GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA app\_ldd TO pi;
-* GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO pi;
-* GRANT ALL PRIVILEGES ON DATABASE ldd TO pi;
-* GRANT ALL PRIVILEGES ON SCHEMA app\_ldd TO pi;
+````
+grant all privileges on database ldd to pi;
+grant usage on schema app\_ldd to pi;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA app\_ldd TO pi;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO pi;
+GRANT ALL PRIVILEGES ON DATABASE ldd TO pi;
+GRANT ALL PRIVILEGES ON SCHEMA app\_ldd TO pi;
+````
 
 Then decide on/generate a password for the pi's database and enter it in:
 
-* ALTER USER pi WITH PASSWORD 'yourchosenpassword'
+```
+ALTER USER pi WITH PASSWORD 'yourchosenpassword'
+```
 
-Then run the following from the database /home/pi/nightsteps/dataprocessing/
+Copy the directory nsdata to /home/pi/
+
+Run the following from the database /home/pi/nsdata/dataprocessing/
+
+```
 python convertGeoLatLon.py all
+```
+
 This takes a long time as well - make sure the datasniffer is fully charged and plugged in before you start. 
 The program will give you some indication of where it is up to.
 
-Then copy the directory nsdata to /home/pi/
-Edit the file /home/pi/nsdata/querydefs/ldd1.json and enter the pi's database password into it
+And then run the following:
+
+```
+python ns\_tableprep\_0\_1.py qt/01\_setupNSBaseTable.sql qd:=q/
+```
+
+Edit the file /home/pi/nsdata/querydefs/ns1.json and enter the pi's database password into it
